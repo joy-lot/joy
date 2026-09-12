@@ -1,0 +1,11 @@
+{
+  "name": "갈등 상황 학생 상담 멘트",
+  "intake": {
+    "studentName": "홍길동",
+    "grade": 2,
+    "className": "3",
+    "academicSummary": "수학 62점으로 지난 학기 대비 하락",
+    "relationshipSummary": "짝과 잦은 다툼, 갈등 지속",
+    "careerSummary": "희망 진로: 소프트웨어 개발자"
+  }
+}

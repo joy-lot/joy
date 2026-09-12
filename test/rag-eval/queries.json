@@ -1,0 +1,10 @@
+[
+  {
+    "query": "교우관계 갈등 상담 방법",
+    "expectedDocumentTitle": "교우관계 상담 매뉴얼"
+  },
+  {
+    "query": "수학 이차방정식 성취기준",
+    "expectedDocumentTitle": "수학과 성취기준"
+  }
+]
