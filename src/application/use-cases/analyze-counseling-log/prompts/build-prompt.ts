@@ -32,6 +32,6 @@ ${formatReferenceContext(referenceMatches)}
 3. 고민을 해결할 수 있는 방향의 상담 멘트를 작성하세요. 근거자료가 있다면 이를 반영하세요.
 
 ## 출력 형식
-다음 JSON 형식으로만 응답하세요.
-{"concernCategory": "학업|교우관계|가족|진로|정서|기타", "riskLevel": "경|중|고", "comment": "상담 멘트"}`;
+comment 필드는 반드시 한국어로만 작성하세요. 다음 JSON 형식으로만 응답하고, 코드블록이나 다른 설명을 추가하지 마세요.
+{"concernCategory": "학업|교우관계|가족|진로|정서|기타", "riskLevel": "경|중|고", "comment": "한국어로 작성한 상담 멘트"}`;
 }

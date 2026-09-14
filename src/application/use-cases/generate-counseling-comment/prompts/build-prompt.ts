@@ -51,6 +51,6 @@ ${formatReferenceContext(referenceMatches)}
 ${AUDIENCE_INSTRUCTION[audience]}
 
 ## 출력 형식
-다음 JSON 형식으로만 응답하세요. 다른 설명을 추가하지 마세요.
-{"comment": "여기에 상담 멘트를 작성"}`;
+반드시 한국어로만 작성하세요. 다음 JSON 형식으로만 응답하고, 코드블록이나 다른 설명을 추가하지 마세요.
+{"comment": "여기에 한국어로 상담 멘트를 작성"}`;
 }

@@ -126,7 +126,7 @@
 - **아이콘**: Lucide Icons
 - **배포**: Vercel
 - **데이터베이스/스토리지/인증**: Supabase (Postgres + pgvector, Storage, Auth, RLS)
-- **LLM**: Ollama 로컬 서빙, Qwen 2.5 계열 소형 모델(예: `qwen2.5:2b` 또는 사양에 맞는 근접 버전)
+- **LLM**: Ollama 로컬 서빙, Qwen 2.5 계열 소형 모델(`qwen2.5:1.5b`. Ollama 공식 라이브러리에는 "2b" 태그가 없어 요청 사양(2B)에 가장 가까운 1.5b를 사용하며, 성능이 부족하면 `qwen2.5:3b`로 조정 가능)
 - **OCR**: 서버사이드 OCR 파이프라인(예: Tesseract 또는 온디바이스 대체 가능한 OCR 엔진) — 인쇄체/손글씨 이원화 처리
 - **RAG**: 문서 청크화 + 임베딩(로컬 임베딩 모델 또는 Ollama 임베딩) + Supabase pgvector 유사도 검색
 

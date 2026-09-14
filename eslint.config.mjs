@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Unrelated sibling project living inside this repo folder — has its own
+    // tooling/config and should not be swept into this project's lint run.
+    "fragrance-chatbot/**",
   ]),
 ]);
 

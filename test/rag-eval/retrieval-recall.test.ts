@@ -10,7 +10,7 @@ describe.skipIf(!shouldRun)("RAG 검색 품질 하네스 (실제 Supabase 호출
   it("각 질의의 top-3 결과에 기대 문서가 포함되어야 한다(recall)", async () => {
     const embedding = new OllamaEmbeddingAdapter({
       baseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
-      model: process.env.OLLAMA_EMBEDDING_MODEL ?? "qwen2.5:2b",
+      model: process.env.OLLAMA_EMBEDDING_MODEL ?? "qwen2.5:1.5b",
     });
     const vectorSearch = new SupabaseVectorSearchAdapter(getSupabaseServiceClient(), embedding);
 

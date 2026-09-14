@@ -10,7 +10,7 @@ describe.skipIf(!shouldRun)("골든 데이터셋: generateCounselingComment (실
   it(`시나리오 "${scenario.name}"의 출력을 콘솔에 출력한다 (사람이 리뷰)`, async () => {
     const llm = new OllamaLlmAdapter({
       baseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
-      model: process.env.OLLAMA_MODEL ?? "qwen2.5:2b",
+      model: process.env.OLLAMA_MODEL ?? "qwen2.5:1.5b",
     });
     // RAG 검색 결과는 고정해 LLM 자체의 변화만 관찰한다.
     const vectorSearch = new FakeVectorSearchAdapter([]);

@@ -6,6 +6,7 @@ import {
   type ExamQuestionResult,
 } from "../../../domain/services/achievement-calculator";
 import type { UnitAchievement } from "../../../domain/value-objects/achievement-level";
+import { extractJsonFromLlmResponse } from "../../shared/extract-json-from-llm-response";
 import { buildExamAnalysisPrompt } from "./prompts/build-prompt";
 
 export interface AnalyzeExamUploadDeps {
@@ -26,15 +27,11 @@ export interface AnalyzeExamUploadResult {
 }
 
 function parseLlmComment(raw: string): string {
-  try {
-    const parsed = JSON.parse(raw) as { comment?: unknown };
-    if (typeof parsed.comment === "string" && parsed.comment.trim().length > 0) {
-      return parsed.comment.trim();
-    }
-  } catch {
-    // fall through
+  const parsed = extractJsonFromLlmResponse(raw) as { comment?: unknown };
+  if (typeof parsed.comment === "string" && parsed.comment.trim().length > 0) {
+    return parsed.comment.trim();
   }
-  throw new Error("LLM 응답을 파싱할 수 없습니다: 예상된 JSON 형식이 아닙니다.");
+  throw new Error("LLM 응답을 파싱할 수 없습니다: comment 필드가 없습니다.");
 }
 
 export async function analyzeExamUpload(

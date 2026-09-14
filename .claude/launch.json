@@ -6,6 +6,18 @@
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
       "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
       "port": 3000
+    },
+    {
+      "name": "fragrance-chatbot",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": [
+        "fragrance-chatbot/node_modules/next/dist/bin/next",
+        "dev",
+        "fragrance-chatbot",
+        "--port",
+        "3001"
+      ],
+      "port": 3001
     }
   ]
 }

@@ -2,6 +2,7 @@ import { detectRiskLevel, resolveRiskLevel } from "../../../domain/services/risk
 import type { LlmPort } from "../../../domain/ports/llm-port";
 import type { VectorSearchPort } from "../../../domain/ports/vector-search-port";
 import type { ConcernCategory, RiskLevel } from "../../../domain/value-objects/risk-level";
+import { extractJsonFromLlmResponse } from "../../shared/extract-json-from-llm-response";
 import { buildCounselingLogPrompt } from "./prompts/build-prompt";
 
 export interface AnalyzeCounselingLogDeps {
@@ -47,13 +48,7 @@ interface ParsedLlmOutput {
 }
 
 function parseLlmOutput(raw: string): ParsedLlmOutput {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error("LLM 응답을 파싱할 수 없습니다: 예상된 JSON 형식이 아닙니다.");
-  }
-
+  const parsed = extractJsonFromLlmResponse(raw);
   const candidate = parsed as Record<string, unknown>;
   if (
     !isConcernCategory(candidate.concernCategory) ||

@@ -11,10 +11,10 @@ export const env = {
     return readEnv("OLLAMA_BASE_URL", "http://localhost:11434");
   },
   get ollamaModel() {
-    return readEnv("OLLAMA_MODEL", "qwen2.5:2b");
+    return readEnv("OLLAMA_MODEL", "qwen2.5:1.5b");
   },
   get ollamaEmbeddingModel() {
-    return readEnv("OLLAMA_EMBEDDING_MODEL", "qwen2.5:2b");
+    return readEnv("OLLAMA_EMBEDDING_MODEL", "qwen2.5:1.5b");
   },
   get supabaseUrl() {
     return readEnv("NEXT_PUBLIC_SUPABASE_URL");
