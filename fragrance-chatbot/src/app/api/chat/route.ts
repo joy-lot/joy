@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateChatReply, type ChatTurn } from "@/lib/gemini";
-import { buildSystemPrompt, type GradeLevel } from "@/lib/systemPrompt";
+import { buildSystemPrompt } from "@/lib/systemPrompt";
+import { extractRecommendation } from "@/lib/recommendation";
 
 type ChatRequestBody = {
   message: string;
   history: ChatTurn[];
-  grade: GradeLevel;
 };
-
-function isValidGrade(value: unknown): value is GradeLevel {
-  return value === "elementary" || value === "middle" || value === "high";
-}
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as Partial<ChatRequestBody>;
@@ -18,15 +14,13 @@ export async function POST(req: NextRequest) {
   if (typeof body.message !== "string" || !body.message.trim()) {
     return NextResponse.json({ error: "message가 필요합니다." }, { status: 400 });
   }
-  if (!isValidGrade(body.grade)) {
-    return NextResponse.json({ error: "grade가 올바르지 않습니다." }, { status: 400 });
-  }
   const history = Array.isArray(body.history) ? body.history : [];
 
   try {
-    const systemPrompt = buildSystemPrompt(body.grade);
-    const reply = await generateChatReply(systemPrompt, history, body.message);
-    return NextResponse.json({ reply });
+    const systemPrompt = buildSystemPrompt();
+    const rawReply = await generateChatReply(systemPrompt, history, body.message);
+    const { cleanText, recommendation } = extractRecommendation(rawReply);
+    return NextResponse.json({ reply: cleanText, recommendation });
   } catch (err) {
     console.error("chat route error:", err);
     return NextResponse.json(

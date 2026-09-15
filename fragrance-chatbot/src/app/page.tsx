@@ -2,32 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, FlaskConical, Loader2 } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Wind, Flower2, Leaf } from "lucide-react";
 import type { ChatTurn } from "@/lib/gemini";
-import type { GradeLevel } from "@/lib/systemPrompt";
+import type { Recommendation } from "@/lib/recommendation";
 
 type Message = {
   role: "user" | "model";
   text: string;
+  recommendation?: Recommendation;
 };
 
-const GRADE_OPTIONS: { value: GradeLevel; label: string }[] = [
-  { value: "elementary", label: "초등학생" },
-  { value: "middle", label: "중학생" },
-  { value: "high", label: "고등학생" },
-];
-
-const STARTER_PROMPTS = [
-  { icon: Sparkles, label: "나에게 맞는 향 추천받기", text: "나에게 어울리는 향을 추천해줘!" },
-  { icon: FlaskConical, label: "향수 만드는 법 배우기", text: "집에서 안전하게 향수 만드는 방법을 알려줘!" },
-];
+const STARTER_PROMPT = "나에게 어울리는 향을 추천해줘!";
 
 export default function Home() {
-  const [grade, setGrade] = useState<GradeLevel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeRecommendation, setActiveRecommendation] = useState<Recommendation | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,24 +27,26 @@ export default function Home() {
   }, [messages, loading]);
 
   async function sendMessage(text: string) {
-    if (!grade || !text.trim() || loading) return;
+    if (!text.trim() || loading) return;
 
-    const nextMessages: Message[] = [...messages, { role: "user", text }];
-    setMessages(nextMessages);
+    const history: ChatTurn[] = messages.map((m) => ({ role: m.role, text: m.text }));
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
     setError(null);
 
     try {
-      const history: ChatTurn[] = messages.map((m) => ({ role: m.role, text: m.text }));
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history, grade }),
+        body: JSON.stringify({ message: text, history }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "오류가 발생했어요.");
-      setMessages([...nextMessages, { role: "model", text: data.reply }]);
+
+      const recommendation: Recommendation | null = data.recommendation ?? null;
+      setMessages((prev) => [...prev, { role: "model", text: data.reply, recommendation: recommendation ?? undefined }]);
+      if (recommendation) setActiveRecommendation(recommendation);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했어요.");
     } finally {
@@ -60,69 +54,33 @@ export default function Home() {
     }
   }
 
-  if (!grade) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pink-200">
-            <Sparkles className="h-8 w-8 text-pink-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-pink-700">향기요정</h1>
-          <p className="max-w-sm text-sm text-neutral-600">
-            대화를 통해 나에게 어울리는 향을 찾고, 안전하게 향수 만드는 법도 배워봐요.
-            <br />
-            먼저 학년을 알려주세요!
-          </p>
-        </motion.div>
-        <div className="flex gap-3">
-          {GRADE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setGrade(opt.value)}
-              className="rounded-full border border-pink-300 bg-white px-5 py-2.5 text-sm font-medium text-pink-700 shadow-sm transition hover:bg-pink-100"
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6">
+    <main className="mx-auto flex h-screen max-w-2xl flex-col px-4 py-6">
       <header className="mb-4 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-200">
           <Sparkles className="h-5 w-5 text-pink-600" />
         </div>
         <div>
           <h1 className="text-lg font-bold text-pink-700">향기요정</h1>
-          <p className="text-xs text-neutral-500">
-            {GRADE_OPTIONS.find((o) => o.value === grade)?.label} 모드
-          </p>
+          <p className="text-xs text-neutral-500">대화로 나에게 맞는 향을 찾아드려요</p>
         </div>
       </header>
 
       <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl bg-white/60 p-4 shadow-inner">
         {messages.length === 0 && (
-          <div className="flex flex-col gap-2 py-6">
-            <p className="text-center text-sm text-neutral-500">무엇을 도와줄까요?</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-              {STARTER_PROMPTS.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => sendMessage(p.text)}
-                  className="flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-pink-700 shadow-sm transition hover:bg-pink-50"
-                >
-                  <p.icon className="h-4 w-4" />
-                  {p.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <p className="text-sm text-neutral-500">
+              몇 가지 질문에 답하면
+              <br />
+              나에게 어울리는 향을 찾아드릴게요!
+            </p>
+            <button
+              onClick={() => sendMessage(STARTER_PROMPT)}
+              className="flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-pink-700 shadow-sm transition hover:bg-pink-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              나에게 맞는 향 추천받기
+            </button>
           </div>
         )}
 
@@ -132,7 +90,7 @@ export default function Home() {
               key={i}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
             >
               <div
                 className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
@@ -143,6 +101,15 @@ export default function Home() {
               >
                 {m.text}
               </div>
+              {m.recommendation && (
+                <button
+                  onClick={() => setActiveRecommendation(m.recommendation!)}
+                  className="mt-1.5 flex items-center gap-1 rounded-full bg-pink-100 px-3 py-1 text-xs font-medium text-pink-700 transition hover:bg-pink-200"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  추천 카드 다시 보기
+                </button>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -181,6 +148,110 @@ export default function Home() {
           <Send className="h-4 w-4" />
         </button>
       </form>
+
+      <AnimatePresence>
+        {activeRecommendation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveRecommendation(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+            >
+              <button
+                onClick={() => setActiveRecommendation(null)}
+                className="absolute right-4 top-4 text-neutral-400 transition hover:text-neutral-600"
+                aria-label="닫기"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="mb-4 flex flex-col items-center gap-2 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-100">
+                  <Sparkles className="h-7 w-7 text-pink-600" />
+                </div>
+                <h2 className="text-xl font-bold text-neutral-800">{activeRecommendation.title}</h2>
+                <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-semibold text-white">
+                  {activeRecommendation.family}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <NoteRow icon={Wind} label="탑노트" notes={activeRecommendation.topNotes} color="amber" />
+                <NoteRow icon={Flower2} label="미들노트" notes={activeRecommendation.heartNotes} color="pink" />
+                <NoteRow icon={Leaf} label="베이스노트" notes={activeRecommendation.baseNotes} color="violet" />
+              </div>
+
+              {activeRecommendation.vibeTags.length > 0 && (
+                <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                  {activeRecommendation.vibeTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-4 text-sm leading-relaxed text-neutral-600">
+                {activeRecommendation.description}
+              </p>
+
+              <button
+                onClick={() => setActiveRecommendation(null)}
+                className="mt-5 w-full rounded-full bg-pink-500 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
+              >
+                확인!
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
+  );
+}
+
+function NoteRow({
+  icon: Icon,
+  label,
+  notes,
+  color,
+}: {
+  icon: typeof Wind;
+  label: string;
+  notes: string[];
+  color: "amber" | "pink" | "violet";
+}) {
+  if (notes.length === 0) return null;
+
+  const colorClasses: Record<typeof color, string> = {
+    amber: "bg-amber-100 text-amber-700",
+    pink: "bg-pink-100 text-pink-700",
+    violet: "bg-violet-100 text-violet-700",
+  };
+
+  return (
+    <div className="flex items-start gap-2">
+      <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${colorClasses[color]}`}>
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+      <div className="flex flex-1 flex-wrap items-center gap-1">
+        <span className="mr-1 text-xs font-medium text-neutral-500">{label}</span>
+        {notes.map((note) => (
+          <span key={note} className={`rounded-full px-2 py-0.5 text-xs ${colorClasses[color]}`}>
+            {note}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
