@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(body.grade);
     const reply = await generateChatReply(systemPrompt, history, body.message);
     return NextResponse.json({ reply });
-  } catch {
+  } catch (err) {
+    console.error("chat route error:", err);
     return NextResponse.json(
       { error: "챗봇 응답을 가져오지 못했어요. 잠시 후 다시 시도해주세요." },
       { status: 502 }
