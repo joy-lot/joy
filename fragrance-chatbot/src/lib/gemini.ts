@@ -24,7 +24,7 @@ export async function generateChatReply(
   message: string
 ): Promise<string> {
   const ai = getClient();
-  const model = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
+  const model = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 
   const chat = ai.chats.create({
     model,
