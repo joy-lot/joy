@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, X, Wind, Flower2, Leaf, Clock, Feather, RotateCcw } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Clock, Feather, RotateCcw } from "lucide-react";
+import ScentFairy from "@/components/ScentFairy";
 import type { ChatTurn } from "@/lib/gemini";
 import type { Recommendation } from "@/lib/recommendation";
 
@@ -20,6 +21,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeRecommendation, setActiveRecommendation] = useState<Recommendation | null>(null);
+  const [reactTrigger, setReactTrigger] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function Home() {
 
       const recommendation: Recommendation | null = data.recommendation ?? null;
       setMessages((prev) => [...prev, { role: "model", text: data.reply, recommendation: recommendation ?? undefined }]);
+      setReactTrigger((n) => n + 1);
       if (recommendation) setActiveRecommendation(recommendation);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했어요.");
@@ -62,7 +65,17 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex h-screen max-w-2xl flex-col px-4 py-6">
+    <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 px-4 py-6 lg:flex-row lg:py-8">
+      <section className="relative h-48 shrink-0 overflow-hidden rounded-3xl border border-pink-100 bg-gradient-to-b from-white/50 to-pink-100/60 shadow-inner lg:h-auto lg:w-[42%]">
+        <ScentFairy reactTrigger={reactTrigger} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+          <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] text-pink-500 shadow-sm backdrop-blur-sm">
+            향기요정을 클릭하거나 움직여보세요 ✨
+          </span>
+        </div>
+      </section>
+
+      <section className="flex min-h-0 flex-1 flex-col">
       <header className="mb-4 flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-rose-300 shadow-inner">
           <Sparkles className="h-5 w-5 text-white" />
@@ -105,7 +118,13 @@ export default function Home() {
                 </div>
               )}
               <div className="flex max-w-[75%] flex-col items-start">
-                <div
+                <motion.div
+                  animate={m.role === "user" ? { y: [0, -4, 0] } : undefined}
+                  transition={
+                    m.role === "user"
+                      ? { duration: 2.8, repeat: Infinity, ease: "easeInOut" }
+                      : undefined
+                  }
                   className={`whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                     m.role === "user"
                       ? "rounded-br-md bg-gradient-to-br from-pink-500 to-rose-400 text-white"
@@ -113,7 +132,7 @@ export default function Home() {
                   }`}
                 >
                   {m.text}
-                </div>
+                </motion.div>
                 {m.recommendation && (
                   <button
                     onClick={() => setActiveRecommendation(m.recommendation!)}
@@ -165,6 +184,7 @@ export default function Home() {
           <Send className="h-4 w-4" />
         </button>
       </form>
+      </section>
 
       <AnimatePresence>
         {activeRecommendation && (
@@ -201,15 +221,6 @@ export default function Home() {
                   <Sparkles className="h-7 w-7 text-pink-600" />
                 </div>
                 <h2 className="font-display text-2xl leading-snug text-neutral-800">{activeRecommendation.title}</h2>
-                <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-semibold text-white">
-                  {activeRecommendation.family}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <NoteRow icon={Wind} label="탑노트" notes={activeRecommendation.topNotes} color="amber" />
-                <NoteRow icon={Flower2} label="미들노트" notes={activeRecommendation.heartNotes} color="pink" />
-                <NoteRow icon={Leaf} label="베이스노트" notes={activeRecommendation.baseNotes} color="violet" />
               </div>
 
               {activeRecommendation.vibeTags.length > 0 && (
@@ -266,41 +277,5 @@ export default function Home() {
         )}
       </AnimatePresence>
     </main>
-  );
-}
-
-function NoteRow({
-  icon: Icon,
-  label,
-  notes,
-  color,
-}: {
-  icon: typeof Wind;
-  label: string;
-  notes: string[];
-  color: "amber" | "pink" | "violet";
-}) {
-  if (notes.length === 0) return null;
-
-  const colorClasses: Record<typeof color, string> = {
-    amber: "bg-amber-100 text-amber-700",
-    pink: "bg-pink-100 text-pink-700",
-    violet: "bg-violet-100 text-violet-700",
-  };
-
-  return (
-    <div className="flex items-start gap-2">
-      <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${colorClasses[color]}`}>
-        <Icon className="h-3.5 w-3.5" />
-      </div>
-      <div className="flex flex-1 flex-wrap items-center gap-1">
-        <span className="mr-1 text-xs font-medium text-neutral-500">{label}</span>
-        {notes.map((note) => (
-          <span key={note} className={`rounded-full px-2 py-0.5 text-xs ${colorClasses[color]}`}>
-            {note}
-          </span>
-        ))}
-      </div>
-    </div>
   );
 }
