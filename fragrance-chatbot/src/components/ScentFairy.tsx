@@ -212,14 +212,17 @@ export default function ScentFairy({ reactTrigger }: ScentFairyProps) {
       targetRotX = -mouseY * 0.25;
 
       if (isReacting > 0) {
-        isReacting -= 0.015;
-        charGroup.rotation.z = Math.sin(t * 12) * 0.15 * isReacting;
-        charGroup.scale.setScalar(1 + Math.sin(t * 10) * 0.08 * isReacting);
-        mainLight.intensity = 2.5 + Math.sin(t * 8) * 1.5 * isReacting;
+        isReacting -= 0.008;
+        charGroup.rotation.z = Math.sin(t * 14) * 0.22 * isReacting;
+        charGroup.scale.setScalar(1 + Math.sin(t * 12) * 0.18 * isReacting);
+        charGroup.position.y += Math.abs(Math.sin(t * 10)) * 0.35 * isReacting;
+        mainLight.intensity = 2.5 + Math.sin(t * 9) * 2.5 * isReacting;
+        haloMat.opacity = 0.65 + 0.35 * isReacting;
       } else {
         charGroup.scale.set(1, 1, 1);
         charGroup.rotation.z = Math.sin(t * 0.8) * 0.04;
         mainLight.intensity = 2.5;
+        haloMat.opacity = 0.65;
       }
 
       charGroup.rotation.y += (targetRotY - charGroup.rotation.y) * 0.08;
