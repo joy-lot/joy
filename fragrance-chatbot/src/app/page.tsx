@@ -12,12 +12,7 @@ type Message = {
   recommendation?: Recommendation;
 };
 
-const MOOD_STARTERS = [
-  { label: "비 오는 날 카페", text: "오늘은 비 오는 날 카페에 있는 것 같은 기분이야! 나에게 어울리는 향을 추천해줘." },
-  { label: "포근한 이불 속", text: "오늘은 포근한 이불 속에서 뒹굴고 싶은 기분이야! 나에게 어울리는 향을 추천해줘." },
-  { label: "상쾌한 아침 산책", text: "오늘은 상쾌한 아침 산책을 한 것 같은 기분이야! 나에게 어울리는 향을 추천해줘." },
-  { label: "신나는 파티 분위기", text: "오늘은 신나고 들뜬 파티 분위기야! 나에게 어울리는 향을 추천해줘." },
-];
+const STARTER_PROMPT = "나에게 어울리는 향을 추천해줘!";
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -82,21 +77,17 @@ export default function Home() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-sm text-neutral-500">
-              오늘 기분이 어때? 하나 골라봐!
+              몇 가지 질문에 답하면
               <br />
-              대화하면서 어울리는 향을 찾아드릴게요.
+              나에게 어울리는 향을 찾아드릴게요!
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {MOOD_STARTERS.map((m) => (
-                <button
-                  key={m.label}
-                  onClick={() => sendMessage(m.text)}
-                  className="rounded-xl border border-pink-200 bg-white px-3 py-2.5 text-xs font-medium text-pink-700 shadow-sm transition hover:bg-pink-50"
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => sendMessage(STARTER_PROMPT)}
+              className="flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-pink-700 shadow-sm transition hover:bg-pink-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              나에게 맞는 향 추천받기
+            </button>
           </div>
         )}
 
