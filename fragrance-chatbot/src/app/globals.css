@@ -1,12 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff7fb;
+  --background: #fff5f8;
   --foreground: #3a2e39;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(circle at top, #fff0f6 0%, #ffe3ee 45%, #ffd6e8 100%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
 }
