@@ -1,10 +1,13 @@
 export type Recommendation = {
   title: string;
   family: string;
+  matchScore: number;
   topNotes: string[];
   heartNotes: string[];
   baseNotes: string[];
   vibeTags: string[];
+  longevity: string;
+  sillage: string;
   description: string;
 };
 
@@ -17,10 +20,13 @@ function isRecommendation(value: unknown): value is Recommendation {
   return (
     typeof v.title === "string" &&
     typeof v.family === "string" &&
+    typeof v.matchScore === "number" &&
     Array.isArray(v.topNotes) &&
     Array.isArray(v.heartNotes) &&
     Array.isArray(v.baseNotes) &&
     Array.isArray(v.vibeTags) &&
+    typeof v.longevity === "string" &&
+    typeof v.sillage === "string" &&
     typeof v.description === "string"
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, X, Wind, Flower2, Leaf } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Wind, Flower2, Leaf, Clock, Feather, RotateCcw } from "lucide-react";
 import type { ChatTurn } from "@/lib/gemini";
 import type { Recommendation } from "@/lib/recommendation";
 
@@ -12,7 +12,12 @@ type Message = {
   recommendation?: Recommendation;
 };
 
-const STARTER_PROMPT = "나에게 어울리는 향을 추천해줘!";
+const MOOD_STARTERS = [
+  { label: "비 오는 날 카페", text: "오늘은 비 오는 날 카페에 있는 것 같은 기분이야! 나에게 어울리는 향을 추천해줘." },
+  { label: "포근한 이불 속", text: "오늘은 포근한 이불 속에서 뒹굴고 싶은 기분이야! 나에게 어울리는 향을 추천해줘." },
+  { label: "상쾌한 아침 산책", text: "오늘은 상쾌한 아침 산책을 한 것 같은 기분이야! 나에게 어울리는 향을 추천해줘." },
+  { label: "신나는 파티 분위기", text: "오늘은 신나고 들뜬 파티 분위기야! 나에게 어울리는 향을 추천해줘." },
+];
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,6 +59,13 @@ export default function Home() {
     }
   }
 
+  function restart() {
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setActiveRecommendation(null);
+  }
+
   return (
     <main className="mx-auto flex h-screen max-w-2xl flex-col px-4 py-6">
       <header className="mb-4 flex items-center gap-3">
@@ -70,17 +82,21 @@ export default function Home() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-sm text-neutral-500">
-              몇 가지 질문에 답하면
+              오늘 기분이 어때? 하나 골라봐!
               <br />
-              나에게 어울리는 향을 찾아드릴게요!
+              대화하면서 어울리는 향을 찾아드릴게요.
             </p>
-            <button
-              onClick={() => sendMessage(STARTER_PROMPT)}
-              className="flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-pink-700 shadow-sm transition hover:bg-pink-50"
-            >
-              <Sparkles className="h-4 w-4" />
-              나에게 맞는 향 추천받기
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {MOOD_STARTERS.map((m) => (
+                <button
+                  key={m.label}
+                  onClick={() => sendMessage(m.text)}
+                  className="rounded-xl border border-pink-200 bg-white px-3 py-2.5 text-xs font-medium text-pink-700 shadow-sm transition hover:bg-pink-50"
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -173,6 +189,12 @@ export default function Home() {
                 <X className="h-5 w-5" />
               </button>
 
+              <div className="mb-1 flex justify-center">
+                <span className="rounded-full bg-gradient-to-r from-pink-500 to-rose-400 px-3 py-1 text-xs font-bold text-white">
+                  ✨ {activeRecommendation.matchScore}% 매치
+                </span>
+              </div>
+
               <div className="mb-4 flex flex-col items-center gap-2 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-100">
                   <Sparkles className="h-7 w-7 text-pink-600" />
@@ -202,16 +224,42 @@ export default function Home() {
                 </div>
               )}
 
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2">
+                  <Clock className="h-4 w-4 shrink-0 text-neutral-400" />
+                  <div>
+                    <p className="text-[10px] font-medium text-neutral-400">지속력</p>
+                    <p className="text-xs text-neutral-700">{activeRecommendation.longevity}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2">
+                  <Feather className="h-4 w-4 shrink-0 text-neutral-400" />
+                  <div>
+                    <p className="text-[10px] font-medium text-neutral-400">잔향감</p>
+                    <p className="text-xs text-neutral-700">{activeRecommendation.sillage}</p>
+                  </div>
+                </div>
+              </div>
+
               <p className="mt-4 text-sm leading-relaxed text-neutral-600">
                 {activeRecommendation.description}
               </p>
 
-              <button
-                onClick={() => setActiveRecommendation(null)}
-                className="mt-5 w-full rounded-full bg-pink-500 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
-              >
-                확인!
-              </button>
+              <div className="mt-5 flex gap-2">
+                <button
+                  onClick={restart}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-pink-200 py-2.5 text-sm font-semibold text-pink-600 transition hover:bg-pink-50"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  다시 추천받기
+                </button>
+                <button
+                  onClick={() => setActiveRecommendation(null)}
+                  className="flex-1 rounded-full bg-pink-500 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
+                >
+                  확인!
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
