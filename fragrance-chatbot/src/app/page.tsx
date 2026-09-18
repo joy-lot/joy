@@ -66,7 +66,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex h-screen max-w-6xl flex-col gap-4 px-4 py-6 lg:flex-row lg:py-8">
+    <main className="mx-auto flex h-screen max-w-[100rem] flex-col gap-4 px-4 py-6 lg:flex-row lg:py-8">
       <section className="relative h-48 shrink-0 overflow-hidden rounded-3xl border border-pink-100 bg-gradient-to-b from-white/50 to-pink-100/60 shadow-inner lg:h-auto lg:w-[52%]">
         <ScentFairy reactTrigger={reactTrigger} />
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
