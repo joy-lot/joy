@@ -189,9 +189,19 @@ export default function ScentFairy({ reactTrigger }: ScentFairyProps) {
 
     function handleMouseMove(e: MouseEvent) {
       const rect = container!.getBoundingClientRect();
-      if (rect.width && rect.height) {
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (inside && rect.width && rect.height) {
         mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
         mouseY = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      } else {
+        // Mouse is elsewhere on the page (e.g. over the chat panel) - look forward.
+        mouseX = 0;
+        mouseY = 0;
       }
     }
     window.addEventListener("mousemove", handleMouseMove);
