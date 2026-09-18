@@ -186,6 +186,8 @@ export default function ScentFairy({ reactTrigger }: ScentFairyProps) {
     let targetRotY = 0;
     let targetRotX = 0;
     let isReacting = 0;
+    let reactionType = 0;
+    const REACTION_COUNT = 5;
 
     function handleMouseMove(e: MouseEvent) {
       const rect = container!.getBoundingClientRect();
@@ -208,6 +210,7 @@ export default function ScentFairy({ reactTrigger }: ScentFairyProps) {
 
     reactFnRef.current = () => {
       isReacting = 1.0;
+      reactionType = Math.floor(Math.random() * REACTION_COUNT);
     };
 
     const clock = new THREE.Clock();
@@ -221,29 +224,70 @@ export default function ScentFairy({ reactTrigger }: ScentFairyProps) {
       targetRotY = mouseX * 0.45;
       targetRotX = -mouseY * 0.25;
 
+      let wingSpeed = 6;
+      let earDroop = 0;
+
       if (isReacting > 0) {
         isReacting -= 0.008;
-        charGroup.rotation.z = Math.sin(t * 14) * 0.22 * isReacting;
-        charGroup.scale.setScalar(1 + Math.sin(t * 12) * 0.18 * isReacting);
-        charGroup.position.y += Math.abs(Math.sin(t * 10)) * 0.35 * isReacting;
-        mainLight.intensity = 2.5 + Math.sin(t * 9) * 2.5 * isReacting;
-        haloMat.opacity = 0.65 + 0.35 * isReacting;
+        const k = isReacting;
+        wingSpeed = 16;
+
+        switch (reactionType) {
+          case 0: // Joyful bounce
+            charGroup.rotation.z = Math.sin(t * 14) * 0.22 * k;
+            charGroup.scale.setScalar(1 + Math.sin(t * 12) * 0.18 * k);
+            charGroup.position.y += Math.abs(Math.sin(t * 10)) * 0.35 * k;
+            mainLight.intensity = 2.5 + Math.sin(t * 9) * 2.5 * k;
+            haloMat.opacity = 0.65 + 0.35 * k;
+            break;
+          case 1: // Happy spin
+            charGroup.rotation.y += 0.3 * k;
+            charGroup.rotation.z = Math.sin(t * 10) * 0.08 * k;
+            charGroup.scale.setScalar(1 + Math.sin(t * 10) * 0.1 * k);
+            mainLight.intensity = 2.5 + 1.2 * k;
+            haloMat.opacity = 0.65 + 0.3 * k;
+            wingSpeed = 20;
+            break;
+          case 2: // Shy wiggle
+            charGroup.rotation.x = 0.16 * k;
+            charGroup.rotation.z = Math.sin(t * 7) * 0.06 * k;
+            blushMaterial.opacity = 0.55 + 0.4 * k;
+            earDroop = 0.25 * k;
+            wingSpeed = 5;
+            break;
+          case 3: // Sparkle burst
+            charGroup.scale.setScalar(1 + Math.sin(t * 20) * 0.05 * k);
+            mainLight.intensity = 2.5 + Math.sin(t * 14) * 3.2 * k;
+            accentLight.intensity = 2.0 + Math.sin(t * 11) * 2.2 * k;
+            haloMat.opacity = 0.65 + 0.35 * Math.abs(Math.sin(t * 10)) * k;
+            wingSpeed = 22;
+            break;
+          default: // Nod yes
+            charGroup.rotation.x = Math.sin(t * 9) * 0.18 * k;
+            charGroup.scale.setScalar(1 + Math.sin(t * 9) * 0.06 * k);
+            mainLight.intensity = 2.5 + 1.0 * k;
+            haloMat.opacity = 0.65 + 0.2 * k;
+            wingSpeed = 10;
+        }
       } else {
         charGroup.scale.set(1, 1, 1);
         charGroup.rotation.z = Math.sin(t * 0.8) * 0.04;
         mainLight.intensity = 2.5;
+        accentLight.intensity = 2.0;
         haloMat.opacity = 0.65;
+        blushMaterial.opacity = 0.55;
+        charGroup.rotation.y += (targetRotY - charGroup.rotation.y) * 0.08;
+        charGroup.rotation.x += (targetRotX - charGroup.rotation.x) * 0.08;
       }
 
-      charGroup.rotation.y += (targetRotY - charGroup.rotation.y) * 0.08;
-      charGroup.rotation.x += (targetRotX - charGroup.rotation.x) * 0.08;
-
-      const wingFlutter = Math.sin(t * (isReacting > 0 ? 16 : 6)) * 0.35;
+      const wingFlutter = Math.sin(t * wingSpeed) * 0.35;
       leftWing.rotation.y = -0.4 + wingFlutter;
       rightWing.rotation.y = 0.4 - wingFlutter;
 
       leftEar.rotation.z = 0.25 + Math.sin(t * 2.2) * 0.06;
       rightEar.rotation.z = -0.25 - Math.sin(t * 2.2 + 0.5) * 0.06;
+      leftEar.rotation.x = -0.15 - earDroop;
+      rightEar.rotation.x = -0.15 - earDroop;
 
       halo.rotation.z = t * 0.3;
 
