@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, Loader2, X, Clock, Feather, RotateCcw } from "lucide-react";
 import ScentFairy from "@/components/ScentFairy";
+import BrandBanner from "@/components/BrandBanner";
 import type { ChatTurn } from "@/lib/gemini";
 import type { Recommendation } from "@/lib/recommendation";
 
@@ -76,15 +77,7 @@ export default function Home() {
       </section>
 
       <section className="flex min-h-0 flex-1 flex-col">
-      <header className="mb-4 flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-rose-300 shadow-inner">
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-display text-xl leading-none text-pink-600">향기요정</h1>
-          <p className="mt-1 text-xs text-neutral-500">대화로 나에게 맞는 향을 찾아드려요</p>
-        </div>
-      </header>
+      <BrandBanner />
 
       <div className="flex-1 space-y-3 overflow-y-auto rounded-3xl border border-pink-100 bg-white/70 p-4 shadow-inner backdrop-blur-sm">
         {messages.length === 0 && (
