@@ -368,26 +368,35 @@ function buildKaryotypeActivity(root){
   // scoped colors for the chromosome svgs (token-aware)
   const style = document.createElement('style');
   style.textContent = `
-    .ky-tray{ display:flex; flex-wrap:wrap; gap:10px; padding:16px; background:var(--surface-2);
-      border:1px dashed var(--line); border-radius:10px; min-height:120px; align-items:flex-end; }
+    .ky-tray{ display:flex; flex-wrap:wrap; gap:12px; padding:18px; background:var(--surface-2);
+      border:1px dashed var(--line); border-radius:14px; min-height:130px; align-items:flex-end; }
     .ky-piece{ cursor:grab; touch-action:none; display:flex; flex-direction:column; align-items:center;
-      padding:3px; border-radius:6px; user-select:none; }
+      padding:6px; border-radius:12px; user-select:none; background:var(--surface); border:1px solid var(--line);
+      box-shadow:var(--shadow); transition:transform .12s ease, box-shadow .12s ease; }
+    .ky-piece:hover{ transform:translateY(-3px); box-shadow:0 10px 20px -10px rgba(22,38,42,.35); }
     .ky-piece.short .chrom-svg{ opacity:.98; }
-    .ky-piece.dragging{ opacity:.85; cursor:grabbing; }
-    .ky-board-grid{ display:flex; flex-direction:column; gap:14px; }
+    .ky-piece.dragging{ opacity:.9; cursor:grabbing; box-shadow:0 16px 28px -12px rgba(22,38,42,.4); }
+    .ky-board-grid{ display:flex; flex-direction:column; gap:18px; }
     .ky-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
-    .ky-row-label{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-soft);
-      width:16px; padding-top:8px; flex:none; }
-    .ky-slot{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .ky-slot .lbl{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+    .ky-row-label{
+      font-size:10.5px; font-weight:700; letter-spacing:.03em; color:var(--accent); background:var(--accent-soft);
+      border-radius:999px; padding:3px 10px; flex:none; align-self:flex-start; margin-top:2px;
+    }
+    .ky-slot{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .ky-slot-tag{
+      display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--line);
+      border-radius:999px; padding:3px 10px 3px 11px;
+    }
+    .ky-slot-tag .num{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:700; color:var(--ink); }
+    .ky-slot-tag .grp{ font-size:9px; font-weight:600; color:var(--ink-soft); }
     .ky-slot .sex-tag{
       font-size:9.5px; font-weight:600; color:var(--accent); background:var(--accent-soft);
-      padding:1px 6px; border-radius:999px; margin-top:2px; white-space:nowrap;
+      padding:1px 6px; border-radius:999px; white-space:nowrap;
     }
-    .ky-drop{ min-width:64px; min-height:112px; border:1.5px dashed var(--line); border-radius:8px;
-      display:flex; align-items:flex-end; justify-content:center; gap:3px; padding:5px; background:var(--surface); }
-    .ky-drop.ok{ border-color:var(--good); background:var(--good-soft); }
-    .ky-drop.bad{ border-color:var(--alert); background:var(--alert-soft); }
+    .ky-drop{ min-width:66px; min-height:114px; border:1.5px dashed var(--line); border-radius:14px;
+      display:flex; align-items:flex-end; justify-content:center; gap:4px; padding:6px; background:var(--surface-2); }
+    .ky-drop.ok{ border:1.5px solid var(--good); background:var(--good-soft); }
+    .ky-drop.bad{ border:1.5px solid var(--alert); background:var(--alert-soft); }
     #ky-diagnosis .panel{ margin-top:16px; }
   `;
   root.appendChild(style);
@@ -408,7 +417,7 @@ function buildKaryotypeActivity(root){
       rowEl.className = 'ky-row';
       const rowLabel = document.createElement('div');
       rowLabel.className = 'ky-row-label';
-      rowLabel.textContent = row.g;
+      rowLabel.textContent = `${row.g}군`;
       rowEl.appendChild(rowLabel);
       row.ids.forEach(id=>{
         const slotWrap = document.createElement('div');
@@ -418,8 +427,8 @@ function buildKaryotypeActivity(root){
         drop.dataset.slot = id;
         slotWrap.appendChild(drop);
         const lbl = document.createElement('div');
-        lbl.className = 'lbl';
-        lbl.textContent = id;
+        lbl.className = 'ky-slot-tag';
+        lbl.innerHTML = `<span class="num">${id}</span><span class="grp">${row.g}군</span>`;
         slotWrap.appendChild(lbl);
         if(id === 'X' || id === 'Y'){
           const tag = document.createElement('div');
