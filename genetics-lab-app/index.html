@@ -1,0 +1,334 @@
+<title>유전 탐구 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#EDF3F1;
+    --surface:#FFFFFF;
+    --surface-2:#E2EAE7;
+    --surface-3:#D6E1DD;
+    --ink:#16262A;
+    --ink-soft:#4B5F5F;
+    --line:#C3D2CE;
+    --dominant:#B9861F;
+    --dominant-soft:#F1E3C2;
+    --recessive:#2F6B4B;
+    --recessive-soft:#D9E9DE;
+    --accent:#146B82;
+    --accent-soft:#D7EAEF;
+    --alert:#A8402A;
+    --alert-soft:#F5DCD4;
+    --good:#227A5C;
+    --good-soft:#D8ECE2;
+    --shadow: 0 1px 2px rgba(22,38,42,.06), 0 8px 24px -12px rgba(22,38,42,.18);
+    --chrom-base:#D6E1DD; --chrom-light:#FFFFFF; --chrom-dark:#4B5F5F; --chrom-outline:#16262A;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0F1B1C;
+      --surface:#16262A;
+      --surface-2:#1C2E30;
+      --surface-3:#213538;
+      --ink:#E7F0EE;
+      --ink-soft:#9FB4B1;
+      --line:#2C4144;
+      --dominant:#E3B655;
+      --dominant-soft:#3A2F17;
+      --recessive:#7EC29C;
+      --recessive-soft:#1D3327;
+      --accent:#5FC2DE;
+      --accent-soft:#12333B;
+      --alert:#E38468;
+      --alert-soft:#3A231C;
+      --good:#6FCBA6;
+      --good-soft:#173229;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      --chrom-base:#213538; --chrom-light:#16262A; --chrom-dark:#9FB4B1; --chrom-outline:#E7F0EE;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1B1C;
+    --surface:#16262A;
+    --surface-2:#1C2E30;
+    --surface-3:#213538;
+    --ink:#E7F0EE;
+    --ink-soft:#9FB4B1;
+    --line:#2C4144;
+    --dominant:#E3B655;
+    --dominant-soft:#3A2F17;
+    --recessive:#7EC29C;
+    --recessive-soft:#1D3327;
+    --accent:#5FC2DE;
+    --accent-soft:#12333B;
+    --alert:#E38468;
+    --alert-soft:#3A231C;
+    --good:#6FCBA6;
+    --good-soft:#173229;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    --chrom-base:#213538; --chrom-light:#16262A; --chrom-dark:#9FB4B1; --chrom-outline:#E7F0EE;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR","IBM Plex Sans",system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.55;
+  }
+  ::selection{ background: var(--accent-soft); color: var(--ink); }
+  h1,h2,h3{ font-family:"Newsreader", Georgia, serif; text-wrap:balance; margin:0; letter-spacing:.005em; }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  button{ font-family:inherit; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---- left rail : notebook tabs ---- */
+  .rail{
+    width:236px; flex:none;
+    background:var(--surface-2);
+    border-right:1px solid var(--line);
+    padding:28px 14px;
+    display:flex; flex-direction:column; gap:6px;
+    position:sticky; top:0; height:100vh;
+  }
+  .rail-brand{
+    font-family:"Newsreader",serif; font-size:19px; font-weight:600;
+    padding:0 10px 18px; border-bottom:1px solid var(--line); margin-bottom:10px;
+  }
+  .rail-brand span{ display:block; font-family:"IBM Plex Sans KR",sans-serif; font-size:11px; font-weight:600;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
+  .tab{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 12px; border-radius:8px; border:1px solid transparent;
+    background:transparent; color:var(--ink-soft); text-align:left; cursor:pointer;
+    font-size:13.5px; font-weight:500;
+  }
+  .tab .num{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-soft);
+    width:20px; height:20px; border-radius:5px; background:var(--surface); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .tab:hover{ background:var(--surface); color:var(--ink); }
+  .tab.active{ background:var(--surface); color:var(--ink); border-color:var(--line); box-shadow:var(--shadow); }
+  .tab.active .num{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .rail-foot{ padding:10px; font-size:11.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:14px; }
+  .name-field{ margin-top:auto; padding:10px; border-top:1px solid var(--line); padding-top:14px; display:flex; flex-direction:column; gap:6px; }
+  .name-field label{ font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+  .student-summary{ font-size:12.5px; color:var(--ink); line-height:1.5; }
+  .edit-info-btn{
+    align-self:flex-start; background:none; border:none; color:var(--accent); font-size:11.5px;
+    font-weight:600; padding:0; cursor:pointer;
+  }
+
+  /* ---- 시작 정보 입력 게이트 ---- */
+  .info-gate{
+    position:fixed; inset:0; background:rgba(15,27,28,.55); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; padding:24px; z-index:2000;
+  }
+  .info-gate[hidden]{ display:none; }
+  .info-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:30px 32px;
+    max-width:420px; width:100%; box-shadow:0 20px 60px -20px rgba(0,0,0,.4);
+  }
+  .info-card h1{ font-size:22px; font-weight:600; margin:6px 0 10px; }
+  .info-card > p{ font-size:13px; color:var(--ink-soft); margin:0 0 20px; }
+  .info-form{ display:flex; flex-direction:column; gap:12px; }
+  .info-form label{ display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:600; color:var(--ink-soft); }
+  .info-form input{
+    font-family:inherit; font-size:14px; font-weight:400; color:var(--ink); padding:9px 11px;
+    border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+  }
+  .info-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .info-error{ color:var(--alert); font-size:12.5px; margin:12px 0 0; }
+  .info-submit{ width:100%; margin-top:18px; padding:11px; font-size:14px; }
+
+  /* ---- main page ---- */
+  .page{ flex:1; min-width:0; padding:36px 44px 80px; max-width:1180px; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .eyebrow{
+    font-size:11.5px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:8px;
+  }
+  .page-head{ padding-bottom:22px; margin-bottom:26px; border-bottom:2px solid var(--line); }
+  .page-head h1{ font-size:30px; font-weight:600; }
+  .page-head p{ margin-top:8px; color:var(--ink-soft); max-width:62ch; }
+
+  /* ---- home ---- */
+  .home-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin-top:8px; }
+  .home-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px;
+    box-shadow:var(--shadow); cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:10px;
+  }
+  .home-card .icon{ width:40px;height:40px;border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .home-card h3{ font-size:18px; font-weight:600; }
+  .home-card p{ color:var(--ink-soft); font-size:13.5px; margin:0; }
+  .home-card .go{ margin-top:auto; font-size:12.5px; font-weight:600; color:var(--accent); }
+
+  .callout{
+    margin-top:26px; background:var(--accent-soft); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; font-size:13.5px; color:var(--ink);
+  }
+  .callout b{ color:var(--accent); }
+
+  /* ---- shared components ---- */
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); }
+  .toolbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:18px; }
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:9px 15px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .btn:hover{ background:var(--surface-3); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.primary:hover{ filter:brightness(1.07); }
+  .btn.ghost{ background:transparent; border-color:transparent; color:var(--accent); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; }
+  .pill.dominant{ background:var(--dominant-soft); color:var(--dominant); }
+  .pill.recessive{ background:var(--recessive-soft); color:var(--recessive); }
+  .pill.good{ background:var(--good-soft); color:var(--good); }
+  .pill.alert{ background:var(--alert-soft); color:var(--alert); }
+
+  .question-box{
+    margin-top:22px; border-top:1px dashed var(--line); padding-top:18px;
+  }
+  .question-box h4{ font-family:"Newsreader",serif; font-size:16px; font-weight:600; margin-bottom:4px; }
+  .question-box .hint{ font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }
+  .question-box textarea{
+    width:100%; min-height:64px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface-2); color:var(--ink); padding:10px 12px; font-size:13.5px; font-family:inherit;
+  }
+  .question-box .starters{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .starter-chip{
+    font-size:11.5px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft);
+    padding:4px 9px; border-radius:999px; cursor:pointer;
+  }
+  .starter-chip:hover{ color:var(--ink); }
+  .qlist{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+  .qlist .qitem{
+    font-size:13px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px;
+  }
+  .qitem-row{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .qitem-text{ flex:1; padding-top:2px; }
+  .qitem-actions{ display:flex; gap:6px; flex:none; align-items:center; }
+  .qitem-actions .chat-toggle{
+    background:var(--accent-soft); border:1px solid var(--line); color:var(--accent);
+    font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:999px; cursor:pointer; white-space:nowrap;
+  }
+  .qitem-actions .chat-toggle:disabled{ opacity:.6; cursor:wait; }
+  .qitem .del{ background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:12px; flex:none; }
+
+  .qitem-chat{
+    margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .chat-thread{ display:flex; flex-direction:column; gap:7px; max-height:280px; overflow-y:auto; }
+  .chat-bubble{
+    max-width:85%; padding:8px 11px; border-radius:10px; font-size:12.5px; line-height:1.5; white-space:pre-wrap;
+  }
+  .chat-bubble.user{ align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:3px; }
+  .chat-bubble.model{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:3px; }
+  .chat-input-row{ display:flex; gap:8px; }
+  .chat-input-row input{
+    flex:1; font-family:inherit; font-size:12.5px; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  }
+  .chat-loading, .chat-error{ font-size:12px; color:var(--ink-soft); margin:0; }
+  .chat-error{ color:var(--alert); }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:6px; }
+
+  @media (max-width: 880px){
+    .app{ flex-direction:column; }
+    .rail{ position:relative; width:100%; height:auto; flex-direction:row; overflow-x:auto; padding:14px; }
+    .rail-brand{ display:none; }
+    .rail-foot{ display:none; }
+    .page{ padding:24px 18px 60px; }
+  }
+</style>
+
+<div class="app">
+  <nav class="rail">
+    <div class="rail-brand"><span>Question Lab · Genetics</span>질문 있는 유전 노트</div>
+    <button class="tab active" data-view="home"><span class="num">•</span> 시작 화면</button>
+    <button class="tab" data-view="karyotype"><span class="num">1</span> 핵형 분석</button>
+    <button class="tab" data-view="pedigree"><span class="num">2</span> 가계도 분석</button>
+    <button class="tab" data-view="coin"><span class="num">3</span> 동전 유전 실험</button>
+    <div class="name-field">
+      <label>내 정보</label>
+      <div id="student-summary" class="student-summary"></div>
+      <button type="button" class="edit-info-btn" id="edit-info">정보 수정</button>
+    </div>
+    <div class="rail-foot">중학교 과학 · 유전과 진화<br>수업공개 탐구 활동</div>
+  </nav>
+
+  <main class="page">
+
+    <section class="view active" id="view-home">
+      <div class="page-head">
+        <div class="eyebrow">Open Class · 질문이 있는 과학수업</div>
+        <h1>염색체와 유전, 스스로 질문해 보기</h1>
+        <p>세 가지 탐구 활동을 직접 조작해 보면서 관찰한 것을 바탕으로 나만의 질문을 만들어 봅시다. 정답을 맞히는 것보다, "왜 그럴까?"를 찾는 것이 이 수업의 목표입니다.</p>
+      </div>
+
+      <div class="home-grid">
+        <button class="home-card" data-goto="karyotype">
+          <div class="icon" style="background:var(--accent-soft);">🧬</div>
+          <h3>1. 핵형 분석</h3>
+          <p>뒤섞인 염색체를 크기순으로 배치해 핵형을 완성하고, 검사자의 염색체 이상 여부를 진단해 봅니다.</p>
+          <span class="go">활동 시작 →</span>
+        </button>
+        <button class="home-card" data-goto="pedigree">
+          <div class="icon" style="background:var(--dominant-soft);">🌳</div>
+          <h3>2. 가계도 분석</h3>
+          <p>매번 새로 생성되는 가계도를 보고 형질의 우열 관계를 추리하고, 구성원의 유전자형을 완성합니다.</p>
+          <span class="go">활동 시작 →</span>
+        </button>
+        <button class="home-card" data-goto="coin">
+          <div class="icon" style="background:var(--recessive-soft);">🪙</div>
+          <h3>3. 동전 유전 실험</h3>
+          <p>동전으로 생식세포의 대립유전자를 흉내 내어 자손을 만들고, 3:1 분리비가 실제로 나오는지 확인합니다.</p>
+          <span class="go">활동 시작 →</span>
+        </button>
+      </div>
+
+      <div class="callout">
+        <b>수업 진행 팁.</b> 각 활동 끝에는 "탐구 질문 남기기" 칸이 있습니다. 학생들에게 정답 확인 후 반드시 자신만의 질문을 1개 이상 적도록 안내해 주세요. 질문은 이 기기(브라우저)에 저장되어 다음에 다시 열어도 남아 있습니다.
+      </div>
+    </section>
+
+    <section class="view" id="view-karyotype"></section>
+    <section class="view" id="view-pedigree"></section>
+    <section class="view" id="view-coin"></section>
+
+  </main>
+</div>
+
+<div class="info-gate" id="info-gate">
+  <div class="info-card">
+    <div class="eyebrow">시작하기 전에</div>
+    <h1>학교·학번·이름을 알려주세요</h1>
+    <p>선생님이 탐구 질문과 AI 대화 기록을 학생별로 확인할 수 있도록 필요한 정보예요. 한 번만 입력하면 이 기기에 저장되어 다음에 다시 입력하지 않아도 됩니다.</p>
+    <div class="info-form">
+      <label>학교<input id="ig-school" type="text" placeholder="예: 은빛중학교" maxlength="40"></label>
+      <div class="info-row">
+        <label>학년<input id="ig-grade" type="number" min="1" max="6" placeholder="3"></label>
+        <label>반<input id="ig-class" type="number" min="1" max="30" placeholder="2"></label>
+        <label>번호<input id="ig-number" type="number" min="1" max="50" placeholder="15"></label>
+      </div>
+      <label>이름<input id="ig-name" type="text" placeholder="예: 홍길동" maxlength="20"></label>
+    </div>
+    <p class="info-error" id="ig-error" hidden>모든 칸을 입력해 주세요.</p>
+    <button type="button" class="btn primary info-submit" id="ig-submit">시작하기</button>
+  </div>
+</div>
+
+<script src="app.js"></script>

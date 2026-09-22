@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>교사 대시보드 · 질문 있는 유전 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#EDF3F1; --surface:#FFFFFF; --surface-2:#E2EAE7; --ink:#16262A; --ink-soft:#4B5F5F;
+    --line:#C3D2CE; --accent:#146B82; --accent-soft:#D7EAEF; --alert:#A8402A; --alert-soft:#F5DCD4;
+    --good:#227A5C; --good-soft:#D8ECE2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    font-family:"IBM Plex Sans KR","IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.55;
+  }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  h1,h2,h3{ font-family:"Newsreader", Georgia, serif; margin:0; text-wrap:balance; }
+  button{ font-family:inherit; cursor:pointer; }
+  input{ font-family:inherit; }
+
+  .gate{ max-width:380px; margin:14vh auto; padding:28px; background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; box-shadow:0 8px 24px -12px rgba(22,38,42,.2); }
+  .gate h1{ font-size:22px; margin-bottom:6px; }
+  .gate p{ color:var(--ink-soft); font-size:13.5px; margin:0 0 16px; }
+  .gate input{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-size:14px; margin-bottom:10px; }
+  .gate button{ width:100%; padding:10px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-weight:600; font-size:14px; }
+  .gate .err{ color:var(--alert); font-size:12.5px; margin-top:8px; display:none; }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:32px 24px 80px; }
+  .top{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .top h1{ font-size:26px; }
+  .top .eyebrow{ font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+  .btn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; }
+  .btn:hover{ background:var(--surface-2); }
+
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+  .stat{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .stat .n{ font-size:22px; font-weight:600; font-family:"IBM Plex Mono",monospace; }
+  .stat .l{ font-size:11.5px; color:var(--ink-soft); }
+
+  .activity-tabs{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .activity-tabs button{ border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); padding:6px 13px; border-radius:999px; font-size:12.5px; font-weight:600; }
+  .activity-tabs button.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .select-filters{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .select-filters select{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:6px 10px;
+    border-radius:8px; font-size:12.5px; font-family:inherit;
+  }
+
+  .qcard{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:12px; }
+  .qcard .meta{ display:flex; gap:8px; align-items:center; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; flex-wrap:wrap; }
+  .badge{ padding:2px 9px; border-radius:999px; font-weight:600; background:var(--accent-soft); color:var(--accent); }
+  .qcard .qtext{ font-size:14.5px; margin-bottom:10px; }
+  .qcard .toggle{ font-size:12px; font-weight:600; color:var(--accent); background:none; border:none; padding:0; }
+  .thread{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:8px; }
+  .bubble{ max-width:80%; padding:8px 12px; border-radius:10px; font-size:13px; white-space:pre-wrap; line-height:1.5; }
+  .bubble.user{ align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:3px; }
+  .bubble.model{ align-self:flex-start; background:var(--surface-2); border:1px solid var(--line); border-bottom-left-radius:3px; }
+
+  .empty{ text-align:center; color:var(--ink-soft); padding:60px 0; font-size:14px; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <h1>교사 대시보드</h1>
+  <p>학생들의 탐구 질문과 AI 대화 기록을 확인하려면 암호를 입력하세요.</p>
+  <input type="password" id="passcode" placeholder="암호" autocomplete="off">
+  <button id="enter">입장하기</button>
+  <p class="err" id="gate-err">암호가 올바르지 않습니다.</p>
+</div>
+
+<div class="wrap" id="dash" hidden>
+  <div class="top">
+    <div>
+      <div class="eyebrow">Teacher Dashboard</div>
+      <h1>질문 있는 유전 노트 · 학생 탐구 기록</h1>
+    </div>
+    <button class="btn" id="refresh">🔄 새로고침</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="activity-tabs" id="activity-tabs"></div>
+  <div class="select-filters" id="select-filters"></div>
+  <div id="list"></div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

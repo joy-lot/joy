@@ -1,0 +1,9 @@
+{
+  "name": "genetics-lab-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "중학교 과학 유전 탐구 활동 + AI 탐구 대화 + 교사용 대시보드",
+  "engines": {
+    "node": ">=18"
+  }
+}
