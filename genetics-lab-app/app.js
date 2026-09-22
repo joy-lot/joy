@@ -312,38 +312,36 @@ function expectedForSlot(scenario, slotId){
   return scenario.pieces.filter(p => p.trueType === slotId).map(p => p.trueType);
 }
 
+// 실제 핵형 사진처럼, 염색분체 두 가닥이 중심절에서 잘록해지는 X자 모양으로 그린다.
 function chromosomeSVG(chromId, opts={}){
   const info = CHROM_INFO[chromId];
-  const w = 26, h = info.lenPx;
+  const w = 26, h = opts.heightOverride || info.lenPx;
   const midY = h * info.pRatio;
-  const rng = seedFromString('band-'+chromId);
-  const bands = [];
-  let y = 4;
-  while(y < h-4){
-    const bh = 4 + rng()*9;
-    const dark = rng() > 0.52;
-    bands.push({y, h: Math.min(bh, h-4-y), dark});
-    y += bh;
-  }
+  const cx = w/2;
+  const armR = 6.2, waistR = 1.5;
+  const topY = 3, botY = h-3;
+  const upperMidY = (topY+midY)/2, lowerMidY = (midY+botY)/2;
+  const rng = seedFromString('shape-'+chromId);
+  const jitter = () => (rng()-0.5) * 1.1;
+  const jL1 = jitter(), jL2 = jitter(), jR1 = jitter(), jR2 = jitter();
+
+  const d = `M ${cx-armR} ${topY}
+    C ${cx-armR+jL1} ${upperMidY}, ${cx-waistR} ${midY-6}, ${cx-waistR} ${midY}
+    C ${cx-waistR} ${midY+6}, ${cx-armR+jL2} ${lowerMidY}, ${cx-armR} ${botY}
+    L ${cx+armR} ${botY}
+    C ${cx+armR+jR2} ${lowerMidY}, ${cx+waistR} ${midY+6}, ${cx+waistR} ${midY}
+    C ${cx+waistR} ${midY-6}, ${cx+armR+jR1} ${upperMidY}, ${cx+armR} ${topY} Z`;
+
   const svg = svgEl('svg', {viewBox:`0 0 ${w} ${h}`, width:w, height:h, class:'chrom-svg'});
-  const clipId = 'clip-'+chromId+'-'+Math.random().toString(36).slice(2,8);
-  const clip = svgEl('clipPath', {id: clipId});
-  clip.appendChild(svgEl('rect', {x:2,y:2,width:w-4,height:h-4,rx:(w-4)/2}));
-  svg.appendChild(clip);
-  const g = svgEl('g', {'clip-path':`url(#${clipId})`});
-  g.appendChild(svgEl('rect', {x:2,y:2,width:w-4,height:h-4,rx:(w-4)/2, fill:'var(--chrom-base)'}));
-  bands.forEach(b=>{
-    g.appendChild(svgEl('rect', {x:2, y:b.y, width:w-4, height:b.h,
-      fill: b.dark ? 'var(--chrom-dark)' : 'var(--chrom-light)'}));
-  });
-  svg.appendChild(g);
-  svg.appendChild(svgEl('rect', {x:2,y:2,width:w-4,height:h-4,rx:(w-4)/2, fill:'none',
-    stroke:'var(--chrom-outline)', 'stroke-width':1.4}));
-  const waist = w*0.34;
   svg.appendChild(svgEl('path', {
-    d:`M ${waist} ${midY-1} Q ${w/2} ${midY+5} ${w-waist} ${midY-1}
-       M ${waist} ${midY+1} Q ${w/2} ${midY+7} ${w-waist} ${midY+1}`,
-    stroke:'var(--chrom-outline)', 'stroke-width':1, fill:'none', opacity:.55}));
+    d, fill:'var(--chrom-base)', stroke:'var(--chrom-outline)', 'stroke-width':1.3, 'stroke-linejoin':'round',
+  }));
+  // 중심절에서 자매염색분체가 교차하는 느낌을 주는 작은 X 표시
+  const crossR = Math.min(4, (midY-topY)*0.6, (botY-midY)*0.6, armR*0.6);
+  svg.appendChild(svgEl('line', {x1:cx-crossR, y1:midY-crossR, x2:cx+crossR, y2:midY+crossR,
+    stroke:'var(--chrom-dark)', 'stroke-width':1, opacity:.55}));
+  svg.appendChild(svgEl('line', {x1:cx+crossR, y1:midY-crossR, x2:cx-crossR, y2:midY+crossR,
+    stroke:'var(--chrom-dark)', 'stroke-width':1, opacity:.55}));
   return svg;
 }
 
@@ -442,11 +440,8 @@ function buildKaryotypeActivity(root){
     el.className = 'ky-piece' + (piece.short ? ' short' : '');
     el.dataset.uid = piece.uid;
     el.dataset.trueType = piece.trueType;
-    const svg = chromosomeSVG(piece.trueType);
-    if(piece.short){
-      svg.setAttribute('height', Math.round(CHROM_INFO[piece.trueType].lenPx*0.58));
-      svg.setAttribute('viewBox', `0 0 26 ${Math.round(CHROM_INFO[piece.trueType].lenPx*0.58)}`);
-    }
+    const heightOverride = piece.short ? Math.round(CHROM_INFO[piece.trueType].lenPx*0.58) : null;
+    const svg = chromosomeSVG(piece.trueType, { heightOverride });
     el.appendChild(svg);
     attachDrag(el);
     return el;
