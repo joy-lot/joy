@@ -382,6 +382,10 @@ function buildKaryotypeActivity(root){
       width:16px; padding-top:8px; flex:none; }
     .ky-slot{ display:flex; flex-direction:column; align-items:center; gap:6px; }
     .ky-slot .lbl{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+    .ky-slot .sex-tag{
+      font-size:9.5px; font-weight:600; color:var(--accent); background:var(--accent-soft);
+      padding:1px 6px; border-radius:999px; margin-top:2px; white-space:nowrap;
+    }
     .ky-drop{ min-width:64px; min-height:112px; border:1.5px dashed var(--line); border-radius:8px;
       display:flex; align-items:flex-end; justify-content:center; gap:3px; padding:5px; background:var(--surface); }
     .ky-drop.ok{ border-color:var(--good); background:var(--good-soft); }
@@ -419,6 +423,12 @@ function buildKaryotypeActivity(root){
         lbl.className = 'lbl';
         lbl.textContent = id;
         slotWrap.appendChild(lbl);
+        if(id === 'X' || id === 'Y'){
+          const tag = document.createElement('div');
+          tag.className = 'sex-tag';
+          tag.textContent = '성염색체';
+          slotWrap.appendChild(tag);
+        }
         rowEl.appendChild(slotWrap);
       });
       grid.appendChild(rowEl);
