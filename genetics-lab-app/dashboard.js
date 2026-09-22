@@ -3,6 +3,8 @@ const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 let allQuestions = [];
+let allActivityLogs = [];
+let viewMode = 'questions'; // 'questions' | 'activities'
 const filters = { activity: 'all', school: 'all', grade: 'all', classNo: 'all' };
 
 function fmtTime(iso){
@@ -10,22 +12,49 @@ function fmtTime(iso){
   return d.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
+function whoLabel(r){
+  return r.school
+    ? `${escapeHtml(r.school)} · ${r.grade}학년 ${r.class_no}반 ${r.student_number}번 ${escapeHtml(r.student_name||'')}`
+    : '정보 없음';
+}
+
 async function fetchDashboard(passcode){
   const res = await fetch('/api/dashboard?passcode=' + encodeURIComponent(passcode));
   if(res.status === 401) throw new Error('invalid_passcode');
   if(!res.ok) throw new Error('server_error');
-  const data = await res.json();
-  return data.questions || [];
+  return res.json();
+}
+
+function currentDataset(){
+  return viewMode === 'questions' ? allQuestions : allActivityLogs;
+}
+
+function renderViewTabs(){
+  const el = $('#view-tabs');
+  const tabs = [['questions','🤔 탐구 질문'], ['activities','📊 활동 기록']];
+  el.innerHTML = '';
+  tabs.forEach(([key,label])=>{
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.className = key === viewMode ? 'active' : '';
+    btn.addEventListener('click', ()=>{
+      viewMode = key;
+      filters.activity = 'all'; filters.school = 'all'; filters.grade = 'all'; filters.classNo = 'all';
+      renderAll();
+    });
+    el.appendChild(btn);
+  });
 }
 
 function renderStats(items){
   const total = items.length;
-  const withChat = items.filter(q => (q.messages||[]).length > 1).length;
   const counts = { karyotype:0, pedigree:0, coin:0 };
   items.forEach(q => { if(counts[q.activity] !== undefined) counts[q.activity]++; });
-  $('#stats').innerHTML = `
-    <div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 질문</div></div>
-    <div class="stat"><div class="n">${withChat}</div><div class="l">AI와 대화까지 진행</div></div>
+  const firstStat = viewMode === 'questions'
+    ? `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 질문</div></div>
+       <div class="stat"><div class="n">${items.filter(q => (q.messages||[]).length > 1).length}</div><div class="l">AI와 대화까지 진행</div></div>`
+    : `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 활동 기록</div></div>`;
+  $('#stats').innerHTML = firstStat + `
     <div class="stat"><div class="n">${counts.karyotype}</div><div class="l">핵형 분석</div></div>
     <div class="stat"><div class="n">${counts.pedigree}</div><div class="l">가계도 분석</div></div>
     <div class="stat"><div class="n">${counts.coin}</div><div class="l">동전 실험</div></div>
@@ -39,10 +68,11 @@ function uniqueSorted(values){
 }
 
 function renderSelectFilters(){
+  const dataset = currentDataset();
   const wrap = $('#select-filters');
-  const schools = uniqueSorted(allQuestions.map(q=>q.school));
+  const schools = uniqueSorted(dataset.map(q=>q.school));
   // 학교 필터가 선택되어 있으면 그 학교 안에서만 학년/반 옵션을 보여줌
-  const scoped = filters.school === 'all' ? allQuestions : allQuestions.filter(q=>q.school === filters.school);
+  const scoped = filters.school === 'all' ? dataset : dataset.filter(q=>q.school === filters.school);
   const grades = uniqueSorted(scoped.map(q=>q.grade));
   const scopedByGrade = filters.grade === 'all' ? scoped : scoped.filter(q=>q.grade === Number(filters.grade));
   const classes = uniqueSorted(scopedByGrade.map(q=>q.class_no));
@@ -82,8 +112,8 @@ function renderActivityTabs(){
   });
 }
 
-function applyFilters(){
-  return allQuestions.filter(q => {
+function applyFilters(dataset){
+  return dataset.filter(q => {
     if(filters.activity !== 'all' && q.activity !== filters.activity) return false;
     if(filters.school !== 'all' && q.school !== filters.school) return false;
     if(filters.grade !== 'all' && q.grade !== Number(filters.grade)) return false;
@@ -92,7 +122,7 @@ function applyFilters(){
   });
 }
 
-function renderList(items){
+function renderQuestionList(items){
   const list = $('#list');
   if(!items.length){
     list.innerHTML = '<div class="empty">조건에 맞는 탐구 질문이 없습니다.</div>';
@@ -103,13 +133,10 @@ function renderList(items){
     const card = document.createElement('div');
     card.className = 'qcard';
     const msgCount = (q.messages||[]).length;
-    const who = q.school
-      ? `${escapeHtml(q.school)} · ${q.grade}학년 ${q.class_no}반 ${q.student_number}번 ${escapeHtml(q.student_name||'')}`
-      : '정보 없음';
     card.innerHTML = `
       <div class="meta">
         <span class="badge">${ACTIVITY_LABEL[q.activity] || q.activity}</span>
-        <span>${who}</span>
+        <span>${whoLabel(q)}</span>
         <span>${fmtTime(q.created_at)}</span>
       </div>
       <div class="qtext">${escapeHtml(q.question_text)}</div>
@@ -136,18 +163,44 @@ function renderList(items){
   });
 }
 
+function renderActivityLogList(items){
+  const list = $('#list');
+  if(!items.length){
+    list.innerHTML = '<div class="empty">조건에 맞는 활동 기록이 없습니다.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  items.forEach(r=>{
+    const card = document.createElement('div');
+    card.className = 'qcard';
+    card.innerHTML = `
+      <div class="meta">
+        <span class="badge">${ACTIVITY_LABEL[r.activity] || r.activity}</span>
+        <span>${whoLabel(r)}</span>
+        <span>${fmtTime(r.created_at)}</span>
+      </div>
+      <div class="qtext">${escapeHtml(r.summary)}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function renderAll(){
+  renderViewTabs();
   renderActivityTabs();
   renderSelectFilters();
-  const items = applyFilters();
+  const items = applyFilters(currentDataset());
   renderStats(items);
-  renderList(items);
+  if(viewMode === 'questions') renderQuestionList(items);
+  else renderActivityLogList(items);
 }
 
 async function loadAndRender(passcode){
-  allQuestions = await fetchDashboard(passcode);
+  const data = await fetchDashboard(passcode);
+  allQuestions = data.questions || [];
+  allActivityLogs = data.activityLogs || [];
   renderAll();
 }
 

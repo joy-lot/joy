@@ -36,8 +36,31 @@ create table if not exists messages (
 create index if not exists messages_question_id_idx on messages(question_id);
 create index if not exists questions_created_at_idx on questions(created_at desc);
 
--- 이 두 테이블은 서버(Vercel 서버리스 함수)의 SERVICE ROLE 키를 통해서만 접근합니다.
+-- 활동(핵형 분석/가계도 분석/동전 실험) 자체의 결과 기록.
+-- "탐구 질문 남기기"와는 별개로, 채점 버튼을 누르는 시점마다 한 건씩 쌓입니다.
+create table if not exists activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  school text,
+  grade smallint,
+  class_no smallint,
+  student_number smallint,
+  student_name text,
+  activity text not null check (activity in ('karyotype','pedigree','coin')),
+  summary text not null,
+  detail jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists activity_logs_created_at_idx on activity_logs(created_at desc);
+create index if not exists activity_logs_school_idx on activity_logs(school);
+create index if not exists activity_logs_grade_class_idx on activity_logs(grade, class_no);
+
+-- 이미 스키마를 한 번 실행해서 questions/messages 테이블만 있다면,
+-- 위 activity_logs 관련 구문(create table ~ create index 3줄)만 다시 실행해도 됩니다.
+
+-- 이 테이블들은 서버(Vercel 서버리스 함수)의 SERVICE ROLE 키를 통해서만 접근합니다.
 -- 클라이언트(학생 브라우저)는 이 데이터베이스에 직접 연결하지 않으므로,
 -- 별도의 공개 정책(anon policy) 없이 RLS를 켜 둔 채로 완전히 잠가 둡니다.
 alter table questions enable row level security;
 alter table messages enable row level security;
+alter table activity_logs enable row level security;

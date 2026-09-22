@@ -55,6 +55,17 @@ async function postChat(payload){
   return res.json();
 }
 
+// 활동 채점/결과 확인 시점마다 교사 대시보드용 기록 한 건을 남긴다. (실패해도 학생 화면엔 영향 없음)
+function logActivityResult(activity, summary, detail){
+  const student = getStudentInfo();
+  if(!student) return;
+  fetch('/api/activity-log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ student, activity, summary, detail }),
+  }).catch(()=>{});
+}
+
 function mountQuestionBox(container, storageKey, starters, promptLabel){
   const key = 'qlab:' + storageKey;
   let saved = [];
@@ -505,6 +516,12 @@ function buildKaryotypeActivity(root){
     scoreEl.className = 'pill ' + (correctSlots===allSlots.length ? 'good' : 'alert');
     scoreEl.textContent = `${correctSlots} / ${allSlots.length} 자리 일치`;
     renderDiagnosis(correctSlots===allSlots.length);
+
+    const info = SYNDROME_INFO[scenario.syndromeKey];
+    logActivityResult('karyotype',
+      `핵형 분석: ${correctSlots}/${allSlots.length} 자리 일치 · 검사자 ${scenario.notation}(${info.title})`,
+      { correctSlots, totalSlots: allSlots.length, notation: scenario.notation, syndromeKey: scenario.syndromeKey }
+    );
   }
 
   function renderDiagnosis(perfect){
@@ -840,6 +857,12 @@ function buildPedigreeActivity(root){
       const g = $(`.ped-node[data-id="${id}"]`, root);
       if(g) g.classList.add('evidence');
     });
+
+    const modeLabel = { dominant:'우성 유전', recessive:'열성 유전' };
+    logActivityResult('pedigree',
+      `가계도 우열 추리: ${modeLabel[chosen.value]} 선택 (정답 ${modeLabel[tree.mode]}) · ${correct ? '정답' : '오답'}`,
+      { part:'type1', chosen: chosen.value, correctMode: tree.mode, correct }
+    );
   });
 
   $('#pd-check2', root).addEventListener('click', ()=>{
@@ -858,6 +881,11 @@ function buildPedigreeActivity(root){
     scoreEl.style.display = 'inline-flex';
     scoreEl.className = 'pill ' + (correct===total ? 'good' : 'alert');
     scoreEl.textContent = `${correct} / ${total} 명 정확`;
+
+    logActivityResult('pedigree',
+      `가계도 유전자형 완성: ${correct}/${total}명 정확 (${tree.mode==='dominant'?'우성':'열성'} 유전)`,
+      { part:'type2', correct, total, mode: tree.mode }
+    );
   });
 
   renderAll();
@@ -932,7 +960,13 @@ function buildCoinActivity(root){
     </div>
 
     <div class="panel" style="margin-bottom:18px;">
-      <h3 style="font-size:17px;margin-bottom:12px;">누적 결과</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <h3 style="font-size:17px;">누적 결과</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn primary" id="cn-submit">📤 선생님께 결과 보내기</button>
+          <span class="pill good" id="cn-submit-ok" style="display:none;">전송 완료</span>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;">
         <div class="cn-stat"><span class="lbl">총 시행 횟수</span><span class="val mono" id="cn-total">0</span></div>
         <div class="cn-stat"><span class="lbl">유전자형 AA : Aa : aa</span><span class="val mono" id="cn-geno">0 : 0 : 0</span></div>
@@ -1071,6 +1105,19 @@ function buildCoinActivity(root){
   $('#cn-flip1', root).addEventListener('click', ()=>doFlips(1));
   $('#cn-flip10', root).addEventListener('click', ()=>doFlips(10));
   $('#cn-flip50', root).addEventListener('click', ()=>doFlips(50));
+
+  $('#cn-submit', root).addEventListener('click', ()=>{
+    const total = tally.history.length;
+    if(!total) return;
+    logActivityResult('coin',
+      `동전 실험: ${paSel.value}×${pbSel.value} 교배, 총 ${total}회 시행, 우성:열성 = ${tally.dom}:${tally.rec} (이론값 ${theoreticalRatioLabel(paSel.value,pbSel.value)})`,
+      { parentA: paSel.value, parentB: pbSel.value, total, dom: tally.dom, rec: tally.rec,
+        genotypes: { AA: tally.AA, Aa: tally.Aa, aa: tally.aa } }
+    );
+    const ok = $('#cn-submit-ok', root);
+    ok.style.display = 'inline-flex';
+    setTimeout(()=>{ ok.style.display = 'none'; }, 2500);
+  });
 
   reset();
 

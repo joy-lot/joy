@@ -43,6 +43,10 @@
   .stat .n{ font-size:22px; font-weight:600; font-family:"IBM Plex Mono",monospace; }
   .stat .l{ font-size:11.5px; color:var(--ink-soft); }
 
+  .view-tabs{ display:flex; gap:6px; margin-bottom:18px; border-bottom:1px solid var(--line); }
+  .view-tabs button{ border:none; background:none; color:var(--ink-soft); padding:10px 4px; margin-right:18px;
+    font-size:14px; font-weight:600; border-bottom:2px solid transparent; }
+  .view-tabs button.active{ color:var(--ink); border-bottom-color:var(--accent); }
   .activity-tabs{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
   .activity-tabs button{ border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); padding:6px 13px; border-radius:999px; font-size:12.5px; font-weight:600; }
   .activity-tabs button.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -85,6 +89,7 @@
     <button class="btn" id="refresh">🔄 새로고침</button>
   </div>
 
+  <div class="view-tabs" id="view-tabs"></div>
   <div class="stats" id="stats"></div>
   <div class="activity-tabs" id="activity-tabs"></div>
   <div class="select-filters" id="select-filters"></div>
