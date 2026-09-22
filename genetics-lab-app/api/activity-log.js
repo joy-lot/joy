@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { student, activity, summary, detail } = req.body || {};
+  const { student, activity, summary, detail, outcome } = req.body || {};
   const s = student || {};
   if (!s.school || !s.grade || !s.classNo || !s.number || !s.name) {
     res.status(400).json({ error: 'student_info_required' });
@@ -45,6 +45,7 @@ module.exports = async function handler(req, res) {
         activity,
         summary: String(summary).slice(0, 500),
         detail: detail || null,
+        outcome: outcome === 'correct' || outcome === 'incorrect' ? outcome : null,
       }),
     });
     if (!resp.ok) {

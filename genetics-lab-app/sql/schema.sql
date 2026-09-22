@@ -48,12 +48,16 @@ create table if not exists activity_logs (
   activity text not null check (activity in ('karyotype','pedigree','coin')),
   summary text not null,
   detail jsonb,
+  outcome text check (outcome in ('correct','incorrect')),
   created_at timestamptz not null default now()
 );
 
 create index if not exists activity_logs_created_at_idx on activity_logs(created_at desc);
 create index if not exists activity_logs_school_idx on activity_logs(school);
 create index if not exists activity_logs_grade_class_idx on activity_logs(grade, class_no);
+
+-- 이미 activity_logs 테이블을 만들어 두었는데 outcome 컬럼이 없다면 아래 한 줄만 실행하세요.
+-- alter table activity_logs add column if not exists outcome text check (outcome in ('correct','incorrect'));
 
 -- 이미 스키마를 한 번 실행해서 questions/messages 테이블만 있다면,
 -- 위 activity_logs 관련 구문(create table ~ create index 3줄)만 다시 실행해도 됩니다.

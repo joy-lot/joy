@@ -56,13 +56,13 @@ async function postChat(payload){
 }
 
 // 활동 채점/결과 확인 시점마다 교사 대시보드용 기록 한 건을 남긴다. (실패해도 학생 화면엔 영향 없음)
-function logActivityResult(activity, summary, detail){
+function logActivityResult(activity, summary, detail, outcome){
   const student = getStudentInfo();
   if(!student) return;
   fetch('/api/activity-log', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ student, activity, summary, detail }),
+    body: JSON.stringify({ student, activity, summary, detail, outcome: outcome || null }),
   }).catch(()=>{});
 }
 
@@ -520,7 +520,8 @@ function buildKaryotypeActivity(root){
     const info = SYNDROME_INFO[scenario.syndromeKey];
     logActivityResult('karyotype',
       `핵형 분석: ${correctSlots}/${allSlots.length} 자리 일치 · 검사자 ${scenario.notation}(${info.title})`,
-      { correctSlots, totalSlots: allSlots.length, notation: scenario.notation, syndromeKey: scenario.syndromeKey }
+      { correctSlots, totalSlots: allSlots.length, notation: scenario.notation, syndromeKey: scenario.syndromeKey },
+      correctSlots === allSlots.length ? 'correct' : 'incorrect'
     );
   }
 
@@ -861,7 +862,8 @@ function buildPedigreeActivity(root){
     const modeLabel = { dominant:'우성 유전', recessive:'열성 유전' };
     logActivityResult('pedigree',
       `가계도 우열 추리: ${modeLabel[chosen.value]} 선택 (정답 ${modeLabel[tree.mode]}) · ${correct ? '정답' : '오답'}`,
-      { part:'type1', chosen: chosen.value, correctMode: tree.mode, correct }
+      { part:'type1', chosen: chosen.value, correctMode: tree.mode, correct },
+      correct ? 'correct' : 'incorrect'
     );
   });
 
@@ -884,7 +886,8 @@ function buildPedigreeActivity(root){
 
     logActivityResult('pedigree',
       `가계도 유전자형 완성: ${correct}/${total}명 정확 (${tree.mode==='dominant'?'우성':'열성'} 유전)`,
-      { part:'type2', correct, total, mode: tree.mode }
+      { part:'type2', correct, total, mode: tree.mode },
+      correct === total ? 'correct' : 'incorrect'
     );
   });
 

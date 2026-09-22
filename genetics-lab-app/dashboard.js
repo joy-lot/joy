@@ -138,6 +138,7 @@ function renderQuestionList(items){
         <span class="badge">${ACTIVITY_LABEL[q.activity] || q.activity}</span>
         <span>${whoLabel(q)}</span>
         <span>${fmtTime(q.created_at)}</span>
+        <button class="del-btn" title="삭제">🗑</button>
       </div>
       <div class="qtext">${escapeHtml(q.question_text)}</div>
       ${msgCount > 1 ? `<button class="toggle">대화 ${msgCount}개 보기 ▾</button>` : '<span style="font-size:12px;color:var(--ink-soft);">아직 AI와 대화하지 않았어요</span>'}
@@ -159,6 +160,13 @@ function renderQuestionList(items){
         toggle.textContent = '대화 접기 ▴';
       });
     }
+    $('.del-btn', card).addEventListener('click', ()=>{
+      if(!confirm('이 탐구 질문과 AI 대화를 삭제할까요?')) return;
+      deleteRecord('question', q.id, ()=>{
+        allQuestions = allQuestions.filter(x=>x.id!==q.id);
+        renderAll();
+      });
+    });
     list.appendChild(card);
   });
 }
@@ -172,17 +180,41 @@ function renderActivityLogList(items){
   list.innerHTML = '';
   items.forEach(r=>{
     const card = document.createElement('div');
-    card.className = 'qcard';
+    card.className = 'qcard' + (r.outcome === 'incorrect' ? ' outcome-incorrect' : r.outcome === 'correct' ? ' outcome-correct' : '');
     card.innerHTML = `
       <div class="meta">
         <span class="badge">${ACTIVITY_LABEL[r.activity] || r.activity}</span>
+        ${r.outcome === 'incorrect' ? '<span class="badge badge-bad">오답</span>' : r.outcome === 'correct' ? '<span class="badge badge-ok">정답</span>' : ''}
         <span>${whoLabel(r)}</span>
         <span>${fmtTime(r.created_at)}</span>
+        <button class="del-btn" title="삭제">🗑</button>
       </div>
       <div class="qtext">${escapeHtml(r.summary)}</div>
     `;
+    $('.del-btn', card).addEventListener('click', ()=>{
+      if(!confirm('이 활동 기록을 삭제할까요?')) return;
+      deleteRecord('activity', r.id, ()=>{
+        allActivityLogs = allActivityLogs.filter(x=>x.id!==r.id);
+        renderAll();
+      });
+    });
     list.appendChild(card);
   });
+}
+
+async function deleteRecord(type, id, onSuccess){
+  const passcode = sessionStorage.getItem('qlab:teacherPasscode');
+  try{
+    const res = await fetch('/api/dashboard-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passcode, type, id }),
+    });
+    if(!res.ok) throw new Error('delete_failed');
+    onSuccess();
+  }catch(e){
+    alert('삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
 }
 
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
