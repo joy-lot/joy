@@ -45,11 +45,15 @@ Vercel 프로젝트 → **Settings → Environment Variables** 에서 아래 값
 
 | 이름 | 값 |
 |---|---|
-| `GEMINI_API_KEY` | 2단계에서 준비한 키 |
-| `GEMINI_MODEL` | (선택) 비워두면 `gemini-2.5-flash` 사용 |
+| `GEMINI_API_KEYS` | 여러 키를 쉼표로 이어붙인 값 (예: `AIzaSy111...,AIzaSy222...`) — 키가 여러 개면 이걸 사용 |
+| `GEMINI_API_KEY` | 키가 하나뿐이면 이것만 입력 (`GEMINI_API_KEYS`가 있으면 무시됨) |
+| `GEMINI_MODEL` | (선택) 비워두면 `gemini-3.5-flash-lite` 사용 |
 | `SUPABASE_URL` | 1단계에서 복사한 Project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | 1단계에서 복사한 service_role 키 |
 | `TEACHER_PASSCODE` | 대시보드 접속용 암호 (직접 정하기, 예: 학교명+숫자) |
+
+여러 키를 등록해두면 요청마다 돌아가며 사용하고, 한 키가 무료 한도(429 오류)에 걸리면
+자동으로 다음 키로 재시도합니다 — 무료 키 여러 개로 하루 총 사용량을 늘리는 방식입니다.
 
 저장 후 **Deployments** 탭에서 최신 배포를 **Redeploy** 합니다(환경 변수는 재배포해야 적용됩니다).
 

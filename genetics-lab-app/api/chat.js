@@ -5,9 +5,24 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const MAX_MESSAGES_PER_QUESTION = 12; // 대화 폭주로 인한 API 비용 급증을 막기 위한 안전장치
+
+// 무료 키 하나의 일일 한도에 걸리지 않도록, 쉼표로 구분한 여러 키를 등록해두면
+// 요청마다 돌아가며 사용하고, 한도(429)에 걸린 키는 건너뛰고 다음 키로 재시도합니다.
+function getGeminiKeys() {
+  const multi = process.env.GEMINI_API_KEYS;
+  if (multi && multi.trim()) {
+    const keys = multi.split(',').map((k) => k.trim()).filter(Boolean);
+    if (keys.length) return keys;
+  }
+  const single = process.env.GEMINI_API_KEY;
+  return single ? [single] : [];
+}
+
+// 요청이 몰릴 때 항상 같은 키만 쓰지 않도록, 서버 인스턴스가 살아있는 동안
+// 시작 지점을 하나씩 돌립니다.
+let rotationIndex = 0;
 
 const ACTIVITY_CONTEXT = {
   karyotype: '학생은 방금 "핵형 분석" 활동을 했습니다. 무작위로 생성된 검사자의 염색체 조각을 크기와 모양에 따라 1~22번 및 성염색체 자리에 배치하고, 터너·클라인펠터·다운 증후군 등 염색체 수 이상을 진단해 보는 활동입니다.',
@@ -47,12 +62,12 @@ async function supabaseRequest(path, options = {}) {
   return res.json();
 }
 
-async function callGemini(systemPrompt, history) {
+async function callGeminiWithKey(apiKey, systemPrompt, history) {
   const contents = history.map((m) => ({
     role: m.role === 'model' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,11 +79,34 @@ async function callGemini(systemPrompt, history) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`Gemini API ${res.status}: ${text}`);
+    const err = new Error(`Gemini API ${res.status}: ${text}`);
+    err.status = res.status;
+    throw err;
   }
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
   return text || '(지금은 답을 만들지 못했어요. 다시 한 번 말해줄래요?)';
+}
+
+async function callGemini(systemPrompt, history) {
+  const keys = getGeminiKeys();
+  if (!keys.length) throw new Error('GEMINI_API_KEY(S)가 설정되어 있지 않습니다.');
+
+  const startIndex = rotationIndex % keys.length;
+  rotationIndex = (rotationIndex + 1) % keys.length;
+
+  let lastErr;
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const key = keys[(startIndex + attempt) % keys.length];
+    try {
+      return await callGeminiWithKey(key, systemPrompt, history);
+    } catch (err) {
+      lastErr = err;
+      // 이 키가 한도(429)에 걸린 경우에만 다음 키로 넘어가고, 그 외 오류는 바로 던짐
+      if (err.status !== 429) throw err;
+    }
+  }
+  throw lastErr;
 }
 
 module.exports = async function handler(req, res) {
@@ -76,7 +114,7 @@ module.exports = async function handler(req, res) {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !getGeminiKeys().length) {
     res.status(500).json({ error: 'server_not_configured' });
     return;
   }
