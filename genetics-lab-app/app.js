@@ -17,21 +17,6 @@ function svgEl(tag, attrs={}, children=[]){
   children.forEach(c => el.appendChild(c));
   return el;
 }
-// seeded PRNG (mulberry32) from a string seed — deterministic banding per chromosome id
-function seedFromString(str){
-  let h = 1779033703 ^ str.length;
-  for(let i=0;i<str.length;i++){
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return () => {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    h ^= h >>> 16;
-    return (h >>> 0) / 4294967296;
-  };
-}
-
 /* ---- reusable "질문 남기기" reflection box (+ AI 탐구 대화) ------------ */
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function qlabUid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -312,37 +297,18 @@ function expectedForSlot(scenario, slotId){
   return scenario.pieces.filter(p => p.trueType === slotId).map(p => p.trueType);
 }
 
-// 실제 핵형 사진처럼, 염색분체 두 가닥이 중심절에서 잘록해지는 X자 모양으로 그린다.
-function chromosomeSVG(chromId, opts={}){
+// 실제 핵형 사진(카드형 목업에서 추출·보정한 이미지)을 조각 크기에 맞춰 렌더링한다.
+function chromosomeImg(chromId, opts={}){
   const info = CHROM_INFO[chromId];
-  const w = 26, h = opts.heightOverride || info.lenPx;
-  const midY = h * info.pRatio;
-  const cx = w/2;
-  const armR = 6.2, waistR = 1.5;
-  const topY = 3, botY = h-3;
-  const upperMidY = (topY+midY)/2, lowerMidY = (midY+botY)/2;
-  const rng = seedFromString('shape-'+chromId);
-  const jitter = () => (rng()-0.5) * 1.1;
-  const jL1 = jitter(), jL2 = jitter(), jR1 = jitter(), jR2 = jitter();
-
-  const d = `M ${cx-armR} ${topY}
-    C ${cx-armR+jL1} ${upperMidY}, ${cx-waistR} ${midY-6}, ${cx-waistR} ${midY}
-    C ${cx-waistR} ${midY+6}, ${cx-armR+jL2} ${lowerMidY}, ${cx-armR} ${botY}
-    L ${cx+armR} ${botY}
-    C ${cx+armR+jR2} ${lowerMidY}, ${cx+waistR} ${midY+6}, ${cx+waistR} ${midY}
-    C ${cx+waistR} ${midY-6}, ${cx+armR+jR1} ${upperMidY}, ${cx+armR} ${topY} Z`;
-
-  const svg = svgEl('svg', {viewBox:`0 0 ${w} ${h}`, width:w, height:h, class:'chrom-svg'});
-  svg.appendChild(svgEl('path', {
-    d, fill:'var(--chrom-base)', stroke:'var(--chrom-outline)', 'stroke-width':1.3, 'stroke-linejoin':'round',
-  }));
-  // 중심절에서 자매염색분체가 교차하는 느낌을 주는 작은 X 표시
-  const crossR = Math.min(4, (midY-topY)*0.6, (botY-midY)*0.6, armR*0.6);
-  svg.appendChild(svgEl('line', {x1:cx-crossR, y1:midY-crossR, x2:cx+crossR, y2:midY+crossR,
-    stroke:'var(--chrom-dark)', 'stroke-width':1, opacity:.55}));
-  svg.appendChild(svgEl('line', {x1:cx+crossR, y1:midY-crossR, x2:cx-crossR, y2:midY+crossR,
-    stroke:'var(--chrom-dark)', 'stroke-width':1, opacity:.55}));
-  return svg;
+  const h = opts.heightOverride || info.lenPx;
+  const img = document.createElement('img');
+  img.src = `assets/chrom/chr-${chromId.toLowerCase()}.png`;
+  img.alt = '';
+  img.draggable = false;
+  img.className = 'chrom-img';
+  img.style.height = h + 'px';
+  img.style.width = 'auto';
+  return img;
 }
 
 function buildKaryotypeActivity(root){
@@ -365,16 +331,16 @@ function buildKaryotypeActivity(root){
     <div id="ky-diagnosis"></div>
     <div id="ky-qbox"></div>
   `;
-  // scoped colors for the chromosome svgs (token-aware)
   const style = document.createElement('style');
   style.textContent = `
     .ky-tray{ display:flex; flex-wrap:wrap; gap:12px; padding:18px; background:var(--surface-2);
       border:1px dashed var(--line); border-radius:14px; min-height:130px; align-items:flex-end; }
     .ky-piece{ cursor:grab; touch-action:none; display:flex; flex-direction:column; align-items:center;
-      padding:6px; border-radius:12px; user-select:none; background:var(--surface); border:1px solid var(--line);
+      padding:6px; border-radius:12px; user-select:none; background:#FFFFFF; border:1px solid var(--line);
       box-shadow:var(--shadow); transition:transform .12s ease, box-shadow .12s ease; }
     .ky-piece:hover{ transform:translateY(-3px); box-shadow:0 10px 20px -10px rgba(22,38,42,.35); }
-    .ky-piece.short .chrom-svg{ opacity:.98; }
+    .ky-piece .chrom-img{ display:block; -webkit-user-drag:none; user-select:none; pointer-events:none; }
+    .ky-piece.short .chrom-img{ opacity:.98; }
     .ky-piece.dragging{ opacity:.9; cursor:grabbing; box-shadow:0 16px 28px -12px rgba(22,38,42,.4); }
     .ky-board-grid{ display:flex; flex-direction:column; gap:18px; }
     .ky-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
@@ -450,8 +416,8 @@ function buildKaryotypeActivity(root){
     el.dataset.uid = piece.uid;
     el.dataset.trueType = piece.trueType;
     const heightOverride = piece.short ? Math.round(CHROM_INFO[piece.trueType].lenPx*0.58) : null;
-    const svg = chromosomeSVG(piece.trueType, { heightOverride });
-    el.appendChild(svg);
+    const img = chromosomeImg(piece.trueType, { heightOverride });
+    el.appendChild(img);
     attachDrag(el);
     return el;
   }
