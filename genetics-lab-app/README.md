@@ -29,9 +29,14 @@ https://aistudio.google.com/apikey 에서 발급받은 키를 준비합니다 �
 
 ## 3단계 · GitHub에 올리고 Vercel과 연결
 
-1. 이 `genetics-lab-app` 폴더 전체를 새 GitHub 저장소로 올립니다(비공개 저장소 추천).
-2. https://vercel.com → **Add New → Project** → 방금 만든 저장소를 선택 → Import.
-3. Framework Preset은 **Other**로 두고(자동 감지됨), 그대로 **Deploy**를 누릅니다.
+이 폴더는 기존 GitHub 저장소(`joy-lot/joy`) 안의 하위 폴더로 커밋되어 있습니다. 같은
+저장소 안에 다른 프로젝트 폴더들도 함께 있는 구조(모노레포)이므로, Vercel에서 반드시
+**Root Directory를 `genetics-lab-app`으로 지정**해야 이 폴더만 배포됩니다.
+
+1. https://vercel.com → GitHub 계정으로 로그인 → **Add New → Project**
+2. `joy-lot/joy` 저장소를 선택해 **Import**
+3. Import 설정 화면에서 **Root Directory** 옆의 **Edit**를 눌러 `genetics-lab-app`을 선택
+4. Framework Preset은 **Other**로 두고(자동 감지됨), 그대로 **Deploy**를 누릅니다.
    (처음 배포는 환경 변수가 없어 AI 대화·대시보드가 아직 동작하지 않아도 정상입니다.)
 
 ## 4단계 · 환경 변수 설정
