@@ -370,7 +370,7 @@ function buildKaryotypeActivity(root){
       <div class="panel" id="ky-board"></div>
       <div class="panel ky-refphoto" id="ky-refphoto" hidden>
         <h4>📷 참고용 핵형 사진</h4>
-        <img src="assets/karyotype-reference.svg" alt="정상 핵형(46,XY) 참고 사진" />
+        <img src="assets/karyotype-reference-photo.png" alt="정상 핵형(46,XY) 참고 사진" />
         <p class="hint"><span id="ky-refphoto-timer">15</span>초 후 사라져요</p>
       </div>
     </div>
