@@ -360,12 +360,20 @@ function buildKaryotypeActivity(root){
         <button class="btn primary" id="ky-new">🔄 새로운 검사자</button>
         <button class="btn" id="ky-grade">✅ 채점하기</button>
         <button class="btn ghost" id="ky-hint">💡 힌트 보기</button>
+        <button class="btn ghost" id="ky-hard" hidden>🆘 어려워요</button>
         <span id="ky-score" class="pill good" style="display:none;"></span>
         <span id="ky-remaining" class="mono" style="font-size:12px;color:var(--ink-soft);margin-left:auto;"></span>
       </div>
       <div class="ky-tray" id="ky-tray"></div>
     </div>
-    <div class="panel" id="ky-board"></div>
+    <div class="ky-work-area">
+      <div class="panel" id="ky-board"></div>
+      <div class="panel ky-refphoto" id="ky-refphoto" hidden>
+        <h4>📷 참고용 핵형 사진</h4>
+        <img src="assets/karyotype-reference.svg" alt="정상 핵형(46,XY) 참고 사진" />
+        <p class="hint"><span id="ky-refphoto-timer">15</span>초 후 사라져요</p>
+      </div>
+    </div>
     <div id="ky-diagnosis"></div>
     <div id="ky-qbox"></div>
   `;
@@ -387,6 +395,14 @@ function buildKaryotypeActivity(root){
       border-radius:999px; padding:2px 6px; box-shadow:var(--shadow);
     }
     #ky-hint.active{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+    #ky-hard{ animation: ky-hard-pulse 1.6s ease-in-out infinite; }
+    @keyframes ky-hard-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(168,64,42,.35); } 50%{ box-shadow:0 0 0 5px rgba(168,64,42,0); } }
+    .ky-work-area{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+    .ky-work-area #ky-board{ flex:1 1 420px; }
+    .ky-refphoto{ flex:0 0 220px; text-align:center; }
+    .ky-refphoto h4{ font-size:13.5px; margin-bottom:10px; }
+    .ky-refphoto img{ width:100%; max-width:220px; background:#fff; border-radius:10px; border:1px solid var(--line); }
+    .ky-refphoto .hint{ margin:8px 0 0; }
     .ky-board-grid{ display:flex; flex-direction:column; gap:18px; }
     .ky-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
     .ky-row-label{
@@ -417,8 +433,29 @@ function buildKaryotypeActivity(root){
   const scoreEl = $('#ky-score', root);
   const remainingEl = $('#ky-remaining', root);
   const diagEl = $('#ky-diagnosis', root);
+  const hardBtn = $('#ky-hard', root);
+  const refPanel = $('#ky-refphoto', root);
+  const refTimerEl = $('#ky-refphoto-timer', root);
+  const HARD_TRIGGER_WRONG = 3;
+  const REF_REVEAL_SECONDS = 15;
 
   let scenario = null;
+  let wrongAttempts = 0;
+  let hintUsed = false;
+  let refRevealTimer = null;
+
+  function updateHardBtnVisibility(){
+    hardBtn.hidden = !(wrongAttempts >= HARD_TRIGGER_WRONG || hintUsed);
+  }
+
+  function resetHardState(){
+    wrongAttempts = 0;
+    hintUsed = false;
+    hardBtn.hidden = true;
+    hardBtn.disabled = false;
+    if(refRevealTimer){ clearInterval(refRevealTimer); refRevealTimer = null; }
+    refPanel.hidden = true;
+  }
 
   function buildBoard(){
     const grid = document.createElement('div');
@@ -476,6 +513,7 @@ function buildKaryotypeActivity(root){
     updateRemaining();
     diagEl.innerHTML = '';
     scoreEl.style.display = 'none';
+    resetHardState();
   }
 
   function updateRemaining(){
@@ -543,6 +581,11 @@ function buildKaryotypeActivity(root){
     scoreEl.textContent = `${correctSlots} / ${allSlots.length} 자리 일치`;
     renderDiagnosis(correctSlots===allSlots.length);
 
+    if(correctSlots !== allSlots.length){
+      wrongAttempts++;
+      updateHardBtnVisibility();
+    }
+
     const info = SYNDROME_INFO[scenario.syndromeKey];
     logActivityResult('karyotype',
       `핵형 분석: ${correctSlots}/${allSlots.length} 자리 일치 · 검사자 ${scenario.notation}(${info.title})`,
@@ -576,6 +619,25 @@ function buildKaryotypeActivity(root){
     const on = trayEl.classList.toggle('show-hints');
     e.currentTarget.classList.toggle('active', on);
     e.currentTarget.textContent = on ? '💡 힌트 끄기' : '💡 힌트 보기';
+    if(on){ hintUsed = true; updateHardBtnVisibility(); }
+  });
+  hardBtn.addEventListener('click', ()=>{
+    if(refRevealTimer) return;
+    refPanel.hidden = false;
+    hardBtn.disabled = true;
+    let remaining = REF_REVEAL_SECONDS;
+    refTimerEl.textContent = remaining;
+    refRevealTimer = setInterval(()=>{
+      remaining--;
+      if(remaining <= 0){
+        clearInterval(refRevealTimer);
+        refRevealTimer = null;
+        refPanel.hidden = true;
+        hardBtn.disabled = false;
+        return;
+      }
+      refTimerEl.textContent = remaining;
+    }, 1000);
   });
 
   buildBoard();
@@ -1320,9 +1382,12 @@ function renderStudentSummary(){
   const el = $('#student-summary');
   if(!el) return;
   const info = getStudentInfo();
-  el.textContent = info
-    ? `${info.school} ${info.grade}학년 ${info.classNo}반 ${info.number}번 ${info.name}`
-    : '입력된 정보 없음';
+  if(!info){ el.textContent = '입력된 정보 없음'; return; }
+  el.innerHTML = `
+    <div class="info-line"><span class="info-label">학교</span><span class="info-value">${escapeHtml(info.school)}</span></div>
+    <div class="info-line"><span class="info-label">학년 · 반 · 번호</span><span class="info-value">${info.grade}학년 ${info.classNo}반 ${info.number}번</span></div>
+    <div class="info-line"><span class="info-label">이름</span><span class="info-value">${escapeHtml(info.name)}</span></div>
+  `;
 }
 
 function initInfoGate(){
