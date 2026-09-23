@@ -4,8 +4,18 @@ const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 let allQuestions = [];
 let allActivityLogs = [];
-let viewMode = 'questions'; // 'questions' | 'activities'
+let viewMode = 'questions'; // 'questions' | 'activities' | 'floating'
 const filters = { activity: 'all', school: 'all', grade: 'all', classNo: 'all' };
+let floatingTimer = null;
+
+function stopFloatingRefresh(){ if(floatingTimer){ clearInterval(floatingTimer); floatingTimer = null; } }
+function startFloatingRefresh(){
+  stopFloatingRefresh();
+  floatingTimer = setInterval(() => {
+    const pc = sessionStorage.getItem('qlab:teacherPasscode');
+    if(pc) loadAndRender(pc).catch(()=>{});
+  }, 15000);
+}
 
 function fmtTime(iso){
   const d = new Date(iso);
@@ -26,12 +36,12 @@ async function fetchDashboard(passcode){
 }
 
 function currentDataset(){
-  return viewMode === 'questions' ? allQuestions : allActivityLogs;
+  return viewMode === 'activities' ? allActivityLogs : allQuestions;
 }
 
 function renderViewTabs(){
   const el = $('#view-tabs');
-  const tabs = [['questions','🤔 탐구 질문'], ['activities','📊 활동 기록']];
+  const tabs = [['questions','🤔 탐구 질문'], ['activities','📊 활동 기록'], ['floating','🎈 떠다니는 질문']];
   el.innerHTML = '';
   tabs.forEach(([key,label])=>{
     const btn = document.createElement('button');
@@ -40,6 +50,7 @@ function renderViewTabs(){
     btn.addEventListener('click', ()=>{
       viewMode = key;
       filters.activity = 'all'; filters.school = 'all'; filters.grade = 'all'; filters.classNo = 'all';
+      if(key === 'floating') startFloatingRefresh(); else stopFloatingRefresh();
       renderAll();
     });
     el.appendChild(btn);
@@ -50,10 +61,12 @@ function renderStats(items){
   const total = items.length;
   const counts = { karyotype:0, pedigree:0, coin:0 };
   items.forEach(q => { if(counts[q.activity] !== undefined) counts[q.activity]++; });
-  const firstStat = viewMode === 'questions'
-    ? `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 질문</div></div>
-       <div class="stat"><div class="n">${items.filter(q => (q.messages||[]).length > 1).length}</div><div class="l">AI와 대화까지 진행</div></div>`
-    : `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 활동 기록</div></div>`;
+  const firstStat = viewMode === 'activities'
+    ? `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 활동 기록</div></div>`
+    : `<div class="stat"><div class="n">${total}</div><div class="l">선택된 범위 내 질문</div></div>
+       <div class="stat"><div class="n">${items.filter(q => (q.messages||[]).length > 1).length}</div><div class="l">AI와 대화까지 진행</div></div>
+       <div class="stat"><div class="n">${items.reduce((sum,q)=>sum+(q.question_likes||[]).length,0)}</div><div class="l">받은 하트 수</div></div>
+       <div class="stat"><div class="n">${items.reduce((sum,q)=>sum+(q.question_comments||[]).length,0)}</div><div class="l">달린 댓글 수</div></div>`;
   $('#stats').innerHTML = firstStat + `
     <div class="stat"><div class="n">${counts.karyotype}</div><div class="l">핵형 분석</div></div>
     <div class="stat"><div class="n">${counts.pedigree}</div><div class="l">가계도 분석</div></div>
@@ -133,6 +146,8 @@ function renderQuestionList(items){
     const card = document.createElement('div');
     card.className = 'qcard';
     const msgCount = (q.messages||[]).length;
+    const likes = q.question_likes || [];
+    const comments = q.question_comments || [];
     card.innerHTML = `
       <div class="meta">
         <span class="badge">${ACTIVITY_LABEL[q.activity] || q.activity}</span>
@@ -141,8 +156,14 @@ function renderQuestionList(items){
         <button class="del-btn" title="삭제">🗑</button>
       </div>
       <div class="qtext">${escapeHtml(q.question_text)}</div>
+      <div class="board-meta">
+        <span class="mini-badge">❤️ ${likes.length}</span>
+        ${likes.length ? `<span class="likers">${likes.map(l=>`${escapeHtml(l.student_name||'')}(${l.student_number ?? ''})`).join(', ')}</span>` : ''}
+      </div>
       ${msgCount > 1 ? `<button class="toggle">대화 ${msgCount}개 보기 ▾</button>` : '<span style="font-size:12px;color:var(--ink-soft);">아직 AI와 대화하지 않았어요</span>'}
       <div class="thread" hidden></div>
+      ${comments.length ? `<button class="toggle comment-toggle">댓글 ${comments.length}개 보기 ▾</button>` : '<span style="font-size:12px;color:var(--ink-soft);">아직 댓글이 없어요</span>'}
+      <div class="comment-thread" hidden></div>
     `;
     if(msgCount > 1){
       const toggle = $('.toggle', card);
@@ -158,6 +179,33 @@ function renderQuestionList(items){
         });
         thread.hidden = false;
         toggle.textContent = '대화 접기 ▴';
+      });
+    }
+    if(comments.length){
+      const cToggle = $('.comment-toggle', card);
+      const cThread = $('.comment-thread', card);
+      cToggle.addEventListener('click', ()=>{
+        if(!cThread.hidden){ cThread.hidden = true; cToggle.textContent = `댓글 ${q.question_comments.length}개 보기 ▾`; return; }
+        cThread.innerHTML = '';
+        q.question_comments.forEach(c=>{
+          const item = document.createElement('div');
+          item.className = 'comment-item';
+          item.innerHTML = `
+            <b>${c.student_number ?? ''}번 ${escapeHtml(c.student_name||'')}</b>
+            <span>${escapeHtml(c.comment_text)}</span>
+            <button class="comment-del" title="삭제">🗑</button>
+          `;
+          $('.comment-del', item).addEventListener('click', ()=>{
+            if(!confirm('이 댓글을 삭제할까요?')) return;
+            deleteRecord('comment', c.id, ()=>{
+              q.question_comments = q.question_comments.filter(x=>x.id!==c.id);
+              renderAll();
+            });
+          });
+          cThread.appendChild(item);
+        });
+        cThread.hidden = false;
+        cToggle.textContent = '댓글 접기 ▴';
       });
     }
     $('.del-btn', card).addEventListener('click', ()=>{
@@ -202,6 +250,32 @@ function renderActivityLogList(items){
   });
 }
 
+function renderFloatingBoard(items){
+  const list = $('#list');
+  if(!items.length){
+    list.innerHTML = '<div class="empty">떠다니게 할 질문이 없습니다.</div>';
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'floating-wrap';
+  items.forEach(q=>{
+    const duration = 16 + Math.random()*14;
+    const b = document.createElement('div');
+    b.className = 'bubble-float activity-' + q.activity;
+    b.style.left = (Math.random()*82).toFixed(1) + '%';
+    b.style.animationDuration = duration.toFixed(1) + 's';
+    b.style.animationDelay = (-Math.random()*duration).toFixed(1) + 's';
+    b.style.setProperty('--drift', Math.round(Math.random()*100-50) + 'px');
+    const likeCount = (q.question_likes||[]).length;
+    b.title = whoLabel(q);
+    b.innerHTML = `<span class="bf-activity">${ACTIVITY_LABEL[q.activity] || q.activity}${likeCount ? ` · ❤️${likeCount}` : ''}</span>${escapeHtml(q.question_text)}`;
+    b.addEventListener('click', ()=> b.classList.toggle('paused'));
+    wrap.appendChild(b);
+  });
+  list.innerHTML = '';
+  list.appendChild(wrap);
+}
+
 async function deleteRecord(type, id, onSuccess){
   const passcode = sessionStorage.getItem('qlab:teacherPasscode');
   try{
@@ -226,6 +300,7 @@ function renderAll(){
   const items = applyFilters(currentDataset());
   renderStats(items);
   if(viewMode === 'questions') renderQuestionList(items);
+  else if(viewMode === 'floating') renderFloatingBoard(items);
   else renderActivityLogList(items);
 }
 

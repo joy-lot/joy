@@ -67,6 +67,7 @@
 
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
+  [hidden]{ display:none !important; }
   body{
     background:var(--bg);
     color:var(--ink);
@@ -201,6 +202,39 @@
     width:100%; min-height:64px; resize:vertical; border:1px solid var(--line); border-radius:8px;
     background:var(--surface-2); color:var(--ink); padding:10px 12px; font-size:13.5px; font-family:inherit;
   }
+  .board-status{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .board-list{ display:flex; flex-direction:column; gap:10px; }
+  .board-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    animation: board-card-in .25s ease;
+  }
+  .board-card-meta{ display:flex; gap:8px; align-items:center; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; flex-wrap:wrap; }
+  .board-card-text{ font-size:14px; line-height:1.55; }
+  @keyframes board-card-in{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+  .board-card-actions{ display:flex; gap:8px; margin-top:12px; }
+  .heart-btn, .comment-toggle{
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft);
+    font-size:12px; font-weight:600; padding:5px 11px; border-radius:999px; cursor:pointer; font-family:inherit;
+  }
+  .heart-btn.active{ background:var(--alert-soft); border-color:var(--alert); color:var(--alert); }
+  .heart-btn:disabled{ opacity:.6; cursor:wait; }
+  .likers-hint{ font-size:11.5px; color:var(--ink-soft); margin:8px 0 0; }
+  .board-comments{
+    margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .board-comment-list{ display:flex; flex-direction:column; gap:6px; }
+  .board-comment{
+    font-size:12.5px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:8px; padding:7px 10px; line-height:1.5;
+  }
+  .board-comment b{ font-weight:600; margin-right:4px; }
+  .board-comment-input-row{ display:flex; gap:8px; }
+  .board-comment-input-row input{
+    flex:1; font-family:inherit; font-size:12.5px; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  }
+
   .think-pause{
     margin:10px 0; padding:14px; border-radius:10px; background:var(--accent-soft);
     border:1px solid var(--line); text-align:center;
@@ -269,6 +303,7 @@
     <button class="tab" data-view="karyotype"><span class="num">1</span> 핵형 분석</button>
     <button class="tab" data-view="pedigree"><span class="num">2</span> 가계도 분석</button>
     <button class="tab" data-view="coin"><span class="num">3</span> 동전 유전 실험</button>
+    <button class="tab" data-view="board"><span class="num">💬</span> 질문 게시판</button>
     <div class="name-field">
       <label>내 정보</label>
       <div id="student-summary" class="student-summary"></div>
@@ -315,6 +350,7 @@
     <section class="view" id="view-karyotype"></section>
     <section class="view" id="view-pedigree"></section>
     <section class="view" id="view-coin"></section>
+    <section class="view" id="view-board"></section>
 
   </main>
 </div>

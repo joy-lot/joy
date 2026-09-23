@@ -1162,6 +1162,140 @@ function buildCoinActivity(root){
   ], '동전 실험 결과와 이론값을 비교하며 궁금한 점을 질문으로 만들어 보세요.');
 }
 
+/* ---- 질문 게시판 (같은 반 친구들의 질문이 모이는 곳) --------------------- */
+const BOARD_ACTIVITY_LABEL = { karyotype:'핵형 분석', pedigree:'가계도 분석', coin:'동전 실험' };
+const BOARD_ACTIVITY_PILL = { karyotype:'good', pedigree:'dominant', coin:'recessive' };
+
+function buildQuestionBoard(root){
+  root.innerHTML = `
+    <div class="page-head">
+      <div class="eyebrow">Question Board · 질문이 모이는 곳</div>
+      <h1>우리 반 질문 게시판</h1>
+      <p>친구들이 활동을 마치고 남긴 질문들이 이곳에 모입니다. 궁금한 질문에는 하트를 눌러 보고,
+         더 깊이 파고들 심화 질문이나 의견은 댓글로 남겨 보세요.</p>
+    </div>
+    <div class="board-status"></div>
+    <div class="board-list"></div>
+  `;
+  const statusEl = $('.board-status', root);
+  const listEl = $('.board-list', root);
+  const openComments = new Set(); // 새로고침에도 펼쳐둔 댓글창은 유지
+
+  async function load(){
+    const info = getStudentInfo();
+    if(!info){
+      statusEl.textContent = '먼저 왼쪽의 "정보 수정"에서 내 정보를 입력해야 우리 반 질문 게시판을 볼 수 있어요.';
+      listEl.innerHTML = '';
+      return;
+    }
+    try{
+      const params = new URLSearchParams({ school: info.school, grade: info.grade, classNo: info.classNo });
+      const res = await fetch('/api/board?' + params.toString());
+      if(!res.ok) throw new Error('board_fetch_failed');
+      const data = await res.json();
+      const items = data.questions || [];
+      statusEl.textContent = `${info.school} ${info.grade}학년 ${info.classNo}반 · 지금까지 모인 질문 ${items.length}개`;
+      renderBoard(items, info);
+    }catch(e){
+      statusEl.textContent = '질문 게시판을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+    }
+  }
+
+  async function toggleLike(questionId, info, nextLiked){
+    try{
+      await fetch('/api/board-like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, student: info, like: nextLiked }),
+      });
+    }catch(e){ /* 다음 자동 새로고침 때 다시 반영됨 */ }
+    load();
+  }
+
+  async function submitComment(questionId, info, text, inputEl, btnEl){
+    if(!text.trim()) return;
+    btnEl.disabled = true;
+    try{
+      await fetch('/api/board-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, student: info, commentText: text.trim() }),
+      });
+      inputEl.value = '';
+      openComments.add(questionId);
+      await load();
+    }catch(e){
+      alert('댓글을 남기지 못했어요. 잠시 후 다시 시도해 주세요.');
+      btnEl.disabled = false;
+    }
+  }
+
+  function renderBoard(items, info){
+    if(!items.length){
+      listEl.innerHTML = '<p class="hint">아직 모인 질문이 없어요. 활동을 마치고 우리 반 첫 질문을 남겨 보세요!</p>';
+      return;
+    }
+    listEl.innerHTML = '';
+    items.forEach(q=>{
+      const likes = q.question_likes || [];
+      const comments = q.question_comments || [];
+      const likedByMe = likes.some(l => Number(l.student_number) === Number(info.number));
+      const commentsOpen = openComments.has(q.id);
+
+      const card = document.createElement('div');
+      card.className = 'board-card';
+      card.innerHTML = `
+        <div class="board-card-meta">
+          <span class="pill ${BOARD_ACTIVITY_PILL[q.activity] || 'alert'}">${BOARD_ACTIVITY_LABEL[q.activity] || q.activity}</span>
+          <span>${q.student_number ?? ''}번 ${escapeHtml(q.student_name || '')}</span>
+        </div>
+        <div class="board-card-text">${escapeHtml(q.question_text)}</div>
+        <div class="board-card-actions">
+          <button type="button" class="heart-btn ${likedByMe ? 'active' : ''}">${likedByMe ? '❤️' : '🤍'} 궁금해요 ${likes.length}</button>
+          <button type="button" class="comment-toggle">💬 댓글 ${comments.length}</button>
+        </div>
+        ${likes.length ? `<p class="likers-hint">궁금해하는 친구: ${
+          likes.slice(0,6).map(l=>escapeHtml(l.student_name||'')).join(', ')
+        }${likes.length>6 ? ` 외 ${likes.length-6}명` : ''}</p>` : ''}
+        <div class="board-comments" ${commentsOpen ? '' : 'hidden'}>
+          <div class="board-comment-list">
+            ${comments.length
+              ? comments.map(c=>`<div class="board-comment"><b>${c.student_number ?? ''}번 ${escapeHtml(c.student_name||'')}</b> ${escapeHtml(c.comment_text)}</div>`).join('')
+              : '<p class="hint">아직 댓글이 없어요. 첫 심화 질문을 남겨 보세요!</p>'}
+          </div>
+          <div class="board-comment-input-row">
+            <input type="text" maxlength="300" placeholder="심화 질문이나 의견을 남겨 보세요" />
+            <button type="button" class="btn primary board-comment-submit">등록</button>
+          </div>
+        </div>
+      `;
+
+      $('.heart-btn', card).addEventListener('click', (e)=>{
+        e.currentTarget.disabled = true;
+        toggleLike(q.id, info, !likedByMe);
+      });
+
+      const commentsPanel = $('.board-comments', card);
+      $('.comment-toggle', card).addEventListener('click', ()=>{
+        const willOpen = commentsPanel.hidden;
+        commentsPanel.hidden = !willOpen;
+        if(willOpen) openComments.add(q.id); else openComments.delete(q.id);
+      });
+
+      const input = $('.board-comment-input-row input', card);
+      const submitBtn = $('.board-comment-submit', card);
+      submitBtn.addEventListener('click', ()=> submitComment(q.id, info, input.value, input, submitBtn));
+      input.addEventListener('keydown', e=>{ if(e.key === 'Enter') submitComment(q.id, info, input.value, input, submitBtn); });
+
+      listEl.appendChild(card);
+    });
+  }
+
+  load();
+  const timer = setInterval(load, 10000);
+  return { stop: () => clearInterval(timer) };
+}
+
 /* ---- router ------------------------------------------------------------ */
 function initRouter(){
   const tabs = $$('.tab[data-view]');
@@ -1170,6 +1304,7 @@ function initRouter(){
     karyotype: $('#view-karyotype'),
     pedigree: $('#view-pedigree'),
     coin: $('#view-coin'),
+    board: $('#view-board'),
   };
   function go(name){
     tabs.forEach(t => t.classList.toggle('active', t.dataset.view === name));
@@ -1241,4 +1376,5 @@ document.addEventListener('DOMContentLoaded', ()=>{
   buildKaryotypeActivity($('#view-karyotype'));
   buildPedigreeActivity($('#view-pedigree'));
   buildCoinActivity($('#view-coin'));
+  buildQuestionBoard($('#view-board'));
 });

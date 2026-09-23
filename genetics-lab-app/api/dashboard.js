@@ -39,8 +39,11 @@ module.exports = async function handler(req, res) {
     const [questions, activityLogs] = await Promise.all([
       supabaseGet(
         'questions' +
-        '?select=id,school,grade,class_no,student_number,student_name,activity,question_text,created_at,messages(id,role,content,created_at)' +
-        '&order=created_at.desc&messages.order=created_at.asc'
+        '?select=id,school,grade,class_no,student_number,student_name,activity,question_text,created_at,' +
+        'messages(id,role,content,created_at),' +
+        'question_likes(school,grade,class_no,student_number,student_name,created_at),' +
+        'question_comments(id,student_number,student_name,comment_text,created_at)' +
+        '&order=created_at.desc&messages.order=created_at.asc&question_comments.order=created_at.asc'
       ),
       supabaseGet(
         'activity_logs' +

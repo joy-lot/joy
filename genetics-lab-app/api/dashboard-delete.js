@@ -4,7 +4,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TEACHER_PASSCODE = process.env.TEACHER_PASSCODE;
-const TABLE_BY_TYPE = { question: 'questions', activity: 'activity_logs' };
+const TABLE_BY_TYPE = { question: 'questions', activity: 'activity_logs', comment: 'question_comments' };
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
