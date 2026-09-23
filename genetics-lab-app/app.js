@@ -61,18 +61,45 @@ function mountQuestionBox(container, storageKey, starters, promptLabel){
     : q);
   const openPanels = new Set();
 
+  const PAUSE_SECONDS = 20;
   const box = document.createElement('div');
   box.className = 'question-box';
   box.innerHTML = `
     <h4>🤔 탐구 질문 남기기</h4>
     <p class="hint">${promptLabel || '오늘 활동에서 관찰한 것을 바탕으로, 궁금한 점을 스스로 질문으로 만들어 적어 보세요.'}</p>
-    <div class="starters"></div>
-    <textarea placeholder="예) 만약 ~라면 어떻게 될까?"></textarea>
-    <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-      <button class="btn primary add-q">질문 추가하기</button>
+    <div class="think-pause">
+      <p class="think-pause-msg">🤫 질문을 적기 전에, <strong>${PAUSE_SECONDS}초</strong> 동안 오늘 활동에서 본 것을 조용히 떠올려 보세요.</p>
+      <button type="button" class="think-pause-btn">생각 정리 시작</button>
+    </div>
+    <div class="qinput" hidden>
+      <div class="starters"></div>
+      <textarea placeholder="예) 만약 ~라면 어떻게 될까?"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+        <button class="btn primary add-q">질문 추가하기</button>
+      </div>
     </div>
     <div class="qlist"></div>
   `;
+  const pauseEl = $('.think-pause', box);
+  const pauseMsg = $('.think-pause-msg', box);
+  const pauseBtn = $('.think-pause-btn', box);
+  const inputEl = $('.qinput', box);
+  pauseBtn.addEventListener('click', () => {
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = '생각하는 중…';
+    let remaining = PAUSE_SECONDS;
+    const tick = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(tick);
+        pauseEl.hidden = true;
+        inputEl.hidden = false;
+        $('textarea', inputEl).focus();
+        return;
+      }
+      pauseMsg.innerHTML = `🤫 <strong>${remaining}초</strong> 더 조용히 생각해 보세요…`;
+    }, 1000);
+  });
   const startersEl = $('.starters', box);
   (starters||[]).forEach(s=>{
     const chip = document.createElement('button');
@@ -249,6 +276,10 @@ const GROUP_ORDER = [
   {g:'F', ids:['19','20']},
   {g:'G', ids:['21','22','Y']},
 ];
+function groupOf(trueType){
+  const row = GROUP_ORDER.find(r => r.ids.includes(trueType));
+  return row ? row.g : '?';
+}
 
 const SYNDROME_INFO = {
   normal:      { title:'정상 핵형', note:'염색체 수가 46개(상염색체 44 + 성염색체 2)로 정상입니다.' },
@@ -262,8 +293,12 @@ function buildKaryotypeScenario(){
   const kind = pick(['normal','normal','turner','klinefelter','down','criduchat']);
   const pieces = [];
   let uid = 0;
+  const variantCounts = {};
   const addPiece = (trueType, opts={}) => {
-    pieces.push({ uid: 'p'+(uid++), trueType, short: !!opts.short, placedIn: null });
+    const n = variantCounts[trueType] || 0;
+    variantCounts[trueType] = n + 1;
+    const variant = n % 2 === 0 ? 'a' : 'b'; // 같은 번호라도 서로 다른 사진이 보이도록 번갈아 사용
+    pieces.push({ uid: 'p'+(uid++), trueType, variant, short: !!opts.short, placedIn: null });
   };
   const criTarget = kind === 'criduchat' ? '5' : null;
   AUTOSOME_IDS.forEach(id=>{
@@ -301,8 +336,10 @@ function expectedForSlot(scenario, slotId){
 function chromosomeImg(chromId, opts={}){
   const info = CHROM_INFO[chromId];
   const h = opts.heightOverride || info.lenPx;
+  const isSex = chromId === 'X' || chromId === 'Y';
+  const file = isSex ? `chr-${chromId.toLowerCase()}` : `chr-${chromId}-${opts.variant || 'a'}`;
   const img = document.createElement('img');
-  img.src = `assets/chrom/chr-${chromId.toLowerCase()}.png`;
+  img.src = `assets/chrom/${file}.png`;
   img.alt = '';
   img.draggable = false;
   img.className = 'chrom-img';
@@ -322,6 +359,7 @@ function buildKaryotypeActivity(root){
       <div class="toolbar">
         <button class="btn primary" id="ky-new">🔄 새로운 검사자</button>
         <button class="btn" id="ky-grade">✅ 채점하기</button>
+        <button class="btn ghost" id="ky-hint">💡 힌트 보기</button>
         <span id="ky-score" class="pill good" style="display:none;"></span>
         <span id="ky-remaining" class="mono" style="font-size:12px;color:var(--ink-soft);margin-left:auto;"></span>
       </div>
@@ -342,6 +380,13 @@ function buildKaryotypeActivity(root){
     .ky-piece .chrom-img{ display:block; -webkit-user-drag:none; user-select:none; pointer-events:none; }
     .ky-piece.short .chrom-img{ opacity:.98; }
     .ky-piece.dragging{ opacity:.9; cursor:grabbing; box-shadow:0 16px 28px -12px rgba(22,38,42,.4); }
+    .ky-piece{ position:relative; }
+    .ky-tray.show-hints .ky-piece::after{
+      content: attr(data-group) "군"; position:absolute; top:-6px; right:-6px;
+      font-size:9px; font-weight:700; color:#fff; background:var(--accent);
+      border-radius:999px; padding:2px 6px; box-shadow:var(--shadow);
+    }
+    #ky-hint.active{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
     .ky-board-grid{ display:flex; flex-direction:column; gap:18px; }
     .ky-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
     .ky-row-label{
@@ -415,8 +460,9 @@ function buildKaryotypeActivity(root){
     el.className = 'ky-piece' + (piece.short ? ' short' : '');
     el.dataset.uid = piece.uid;
     el.dataset.trueType = piece.trueType;
+    el.dataset.group = groupOf(piece.trueType);
     const heightOverride = piece.short ? Math.round(CHROM_INFO[piece.trueType].lenPx*0.58) : null;
-    const img = chromosomeImg(piece.trueType, { heightOverride });
+    const img = chromosomeImg(piece.trueType, { heightOverride, variant: piece.variant });
     el.appendChild(img);
     attachDrag(el);
     return el;
@@ -526,6 +572,11 @@ function buildKaryotypeActivity(root){
     resetLayout();
   });
   $('#ky-grade', root).addEventListener('click', grade);
+  $('#ky-hint', root).addEventListener('click', (e)=>{
+    const on = trayEl.classList.toggle('show-hints');
+    e.currentTarget.classList.toggle('active', on);
+    e.currentTarget.textContent = on ? '💡 힌트 끄기' : '💡 힌트 보기';
+  });
 
   buildBoard();
   scenario = buildKaryotypeScenario();
