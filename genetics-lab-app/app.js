@@ -366,10 +366,13 @@ function buildKaryotypeActivity(root){
       </div>
       <div class="ky-tray" id="ky-tray"></div>
     </div>
-    <div class="ky-work-area">
-      <div class="panel" id="ky-board"></div>
-      <div class="panel ky-refphoto" id="ky-refphoto" hidden>
-        <h4>📷 참고용 핵형 사진</h4>
+    <div class="panel" id="ky-board"></div>
+    <div class="ky-refphoto-overlay" id="ky-refphoto" hidden>
+      <div class="ky-refphoto-card">
+        <div class="ky-refphoto-head">
+          <h4>📷 참고용 핵형 사진</h4>
+          <button type="button" class="ky-refphoto-close" id="ky-refphoto-close" aria-label="닫기">✕</button>
+        </div>
         <img src="assets/karyotype-reference-photo.png" alt="정상 핵형(46,XY) 참고 사진" />
         <p class="hint"><span id="ky-refphoto-timer">15</span>초 후 사라져요</p>
       </div>
@@ -397,12 +400,23 @@ function buildKaryotypeActivity(root){
     #ky-hint.active{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
     #ky-hard{ animation: ky-hard-pulse 1.6s ease-in-out infinite; }
     @keyframes ky-hard-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(168,64,42,.35); } 50%{ box-shadow:0 0 0 5px rgba(168,64,42,0); } }
-    .ky-work-area{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
-    .ky-work-area #ky-board{ flex:1 1 420px; }
-    .ky-refphoto{ flex:0 0 220px; text-align:center; }
-    .ky-refphoto h4{ font-size:13.5px; margin-bottom:10px; }
-    .ky-refphoto img{ width:100%; max-width:220px; background:#fff; border-radius:10px; border:1px solid var(--line); }
-    .ky-refphoto .hint{ margin:8px 0 0; }
+    .ky-refphoto-overlay{
+      position:fixed; inset:0; z-index:2500; background:rgba(15,27,28,.6); backdrop-filter:blur(2px);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .ky-refphoto-card{
+      background:var(--surface); border-radius:16px; padding:22px 26px 26px;
+      width:100%; max-width:900px; box-shadow:0 24px 60px -20px rgba(0,0,0,.45); text-align:center;
+    }
+    .ky-refphoto-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .ky-refphoto-head h4{ font-size:16px; }
+    .ky-refphoto-close{
+      background:none; border:none; font-size:16px; color:var(--ink-soft); cursor:pointer;
+      padding:4px 8px; border-radius:6px; line-height:1;
+    }
+    .ky-refphoto-close:hover{ background:var(--surface-2); color:var(--ink); }
+    .ky-refphoto-card img{ width:100%; background:#fff; border-radius:10px; border:1px solid var(--line); }
+    .ky-refphoto-card .hint{ margin:10px 0 0; }
     .ky-board-grid{ display:flex; flex-direction:column; gap:18px; }
     .ky-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
     .ky-row-label{
@@ -621,6 +635,11 @@ function buildKaryotypeActivity(root){
     e.currentTarget.textContent = on ? '💡 힌트 끄기' : '💡 힌트 보기';
     if(on){ hintUsed = true; updateHardBtnVisibility(); }
   });
+  function closeRefPhoto(){
+    if(refRevealTimer){ clearInterval(refRevealTimer); refRevealTimer = null; }
+    refPanel.hidden = true;
+    hardBtn.disabled = false;
+  }
   hardBtn.addEventListener('click', ()=>{
     if(refRevealTimer) return;
     refPanel.hidden = false;
@@ -629,16 +648,12 @@ function buildKaryotypeActivity(root){
     refTimerEl.textContent = remaining;
     refRevealTimer = setInterval(()=>{
       remaining--;
-      if(remaining <= 0){
-        clearInterval(refRevealTimer);
-        refRevealTimer = null;
-        refPanel.hidden = true;
-        hardBtn.disabled = false;
-        return;
-      }
+      if(remaining <= 0){ closeRefPhoto(); return; }
       refTimerEl.textContent = remaining;
     }, 1000);
   });
+  $('#ky-refphoto-close', root).addEventListener('click', closeRefPhoto);
+  refPanel.addEventListener('click', (e)=>{ if(e.target === refPanel) closeRefPhoto(); });
 
   buildBoard();
   scenario = buildKaryotypeScenario();
