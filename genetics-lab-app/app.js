@@ -40,6 +40,17 @@ async function postChat(payload){
   return res.json();
 }
 
+// AI와 대화를 시작하지 않아도, 질문을 추가하는 즉시 질문 게시판/교사 대시보드에 보이도록 서버에 저장한다.
+async function postSaveQuestion(payload){
+  const res = await fetch('/api/save-question', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if(!res.ok) throw new Error('save_question_failed');
+  return res.json();
+}
+
 // 활동 채점/결과 확인 시점마다 교사 대시보드용 기록 한 건을 남긴다. (실패해도 학생 화면엔 영향 없음)
 function logActivityResult(activity, summary, detail, outcome){
   const student = getStudentInfo();
@@ -210,11 +221,9 @@ function mountQuestionBox(container, storageKey, starters, promptLabel){
         panelEl.innerHTML = '<p class="chat-loading">AI가 답을 생각하고 있어요…</p>';
         toggleBtn.disabled = true;
         try{
-          const data = await postChat({
-            activity: storageKey,
-            student: getStudentInfo(),
-            question: q.text,
-          });
+          const data = q.serverId
+            ? await postChat({ questionId: q.serverId, message: q.text })
+            : await postChat({ activity: storageKey, student: getStudentInfo(), question: q.text });
           q.serverId = data.questionId;
           q.messages = [{ role:'user', content:q.text }, { role:'model', content:data.reply }];
           persist();
@@ -233,10 +242,17 @@ function mountQuestionBox(container, storageKey, starters, promptLabel){
     const ta = $('textarea', box);
     const v = ta.value.trim();
     if(!v) return;
-    saved.push({ id: qlabUid(), text:v, serverId:null, messages:[] });
+    const q = { id: qlabUid(), text:v, serverId:null, messages:[] };
+    saved.push(q);
     persist();
     ta.value = '';
     render();
+    const info = getStudentInfo();
+    if(info){
+      postSaveQuestion({ activity: storageKey, student: info, question: v })
+        .then(data => { q.serverId = data.questionId; persist(); })
+        .catch(()=>{ /* 실패해도 학생 화면엔 영향 없음 — 다음에 AI와 대화할 때 다시 저장됨 */ });
+    }
   });
   render();
   container.appendChild(box);
