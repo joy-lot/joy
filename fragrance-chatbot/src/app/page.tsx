@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, X, Clock, Feather, RotateCcw } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Feather, RotateCcw } from "lucide-react";
 import ScentFairy from "@/components/ScentFairy";
 import BrandBanner from "@/components/BrandBanner";
 import type { ChatTurn } from "@/lib/gemini";
@@ -236,18 +236,11 @@ export default function Home() {
                   </div>
                 )}
 
-                <div className="mt-4 grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-pink-50 px-3 py-3 text-center">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-pink-100">
-                      <Clock className="h-3.5 w-3.5 text-pink-500" />
-                    </div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-400">지속력</p>
-                    <p className="text-xs font-medium text-neutral-700">{activeRecommendation.longevity}</p>
+                <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl bg-sky-50 px-4 py-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100">
+                    <Feather className="h-3.5 w-3.5 text-sky-500" />
                   </div>
-                  <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-sky-50 px-3 py-3 text-center">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100">
-                      <Feather className="h-3.5 w-3.5 text-sky-500" />
-                    </div>
+                  <div className="text-left">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-400">잔향감</p>
                     <p className="text-xs font-medium text-neutral-700">{activeRecommendation.sillage}</p>
                   </div>

@@ -2,7 +2,6 @@ export type Recommendation = {
   title: string;
   matchScore: number;
   vibeTags: string[];
-  longevity: string;
   sillage: string;
   description: string;
 };
@@ -17,7 +16,6 @@ function isRecommendation(value: unknown): value is Recommendation {
     typeof v.title === "string" &&
     typeof v.matchScore === "number" &&
     Array.isArray(v.vibeTags) &&
-    typeof v.longevity === "string" &&
     typeof v.sillage === "string" &&
     typeof v.description === "string"
   );
