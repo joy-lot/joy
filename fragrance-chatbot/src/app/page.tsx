@@ -193,77 +193,85 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 12 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+              className="relative flex max-h-[85vh] w-full max-w-sm flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"
             >
-              <button
-                onClick={() => setActiveRecommendation(null)}
-                className="absolute right-4 top-4 text-neutral-400 transition hover:text-neutral-600"
-                aria-label="닫기"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div className="mb-1 flex justify-center">
-                <span className="rounded-full bg-gradient-to-r from-pink-500 to-rose-400 px-3 py-1 text-xs font-bold text-white">
-                  ✨ {activeRecommendation.matchScore}% 매치
-                </span>
-              </div>
-
-              <div className="mb-4 flex flex-col items-center gap-2 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-100">
-                  <Sparkles className="h-7 w-7 text-pink-600" />
+              <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-pink-400 via-rose-400 to-fuchsia-400 px-6 pb-9 pt-5 text-center">
+                <div className="pointer-events-none absolute inset-0 opacity-30">
+                  <div className="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40 blur-2xl" />
+                  <div className="absolute -right-8 bottom-0 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
                 </div>
-                <h2 className="font-display text-2xl leading-snug text-neutral-800">{activeRecommendation.title}</h2>
-              </div>
 
-              {activeRecommendation.vibeTags.length > 0 && (
-                <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                  {activeRecommendation.vibeTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2">
-                  <Clock className="h-4 w-4 shrink-0 text-neutral-400" />
-                  <div>
-                    <p className="text-[10px] font-medium text-neutral-400">지속력</p>
-                    <p className="text-xs text-neutral-700">{activeRecommendation.longevity}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2">
-                  <Feather className="h-4 w-4 shrink-0 text-neutral-400" />
-                  <div>
-                    <p className="text-[10px] font-medium text-neutral-400">잔향감</p>
-                    <p className="text-xs text-neutral-700">{activeRecommendation.sillage}</p>
-                  </div>
-                </div>
-              </div>
-
-              <p className="mt-4 text-sm leading-relaxed text-neutral-600">
-                {activeRecommendation.description}
-              </p>
-
-              <div className="mt-5 flex gap-2">
-                <button
-                  onClick={restart}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-pink-200 py-2.5 text-sm font-semibold text-pink-600 transition hover:bg-pink-50"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  다시 추천받기
-                </button>
                 <button
                   onClick={() => setActiveRecommendation(null)}
-                  className="flex-1 rounded-full bg-pink-500 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
+                  className="absolute right-4 top-4 text-white/80 transition hover:text-white"
+                  aria-label="닫기"
                 >
-                  확인!
+                  <X className="h-5 w-5" />
                 </button>
+
+                <span className="relative inline-flex items-center gap-1 rounded-full bg-white/25 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                  ✨ {activeRecommendation.matchScore}% 매치
+                </span>
+
+                <div className="relative mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 ring-4 ring-white/30">
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">
+                <h2 className="text-center font-display text-2xl leading-snug text-neutral-800">
+                  {activeRecommendation.title}
+                </h2>
+
+                {activeRecommendation.vibeTags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                    {activeRecommendation.vibeTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-pink-50 px-3 py-3 text-center">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-pink-100">
+                      <Clock className="h-3.5 w-3.5 text-pink-500" />
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-400">지속력</p>
+                    <p className="text-xs font-medium text-neutral-700">{activeRecommendation.longevity}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-sky-50 px-3 py-3 text-center">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100">
+                      <Feather className="h-3.5 w-3.5 text-sky-500" />
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-400">잔향감</p>
+                    <p className="text-xs font-medium text-neutral-700">{activeRecommendation.sillage}</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-600">
+                  {activeRecommendation.description}
+                </p>
+
+                <div className="mt-5 flex gap-2">
+                  <button
+                    onClick={restart}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-pink-200 py-2.5 text-sm font-semibold text-pink-600 transition hover:bg-pink-50"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    다시 추천받기
+                  </button>
+                  <button
+                    onClick={() => setActiveRecommendation(null)}
+                    className="flex-1 rounded-full bg-gradient-to-br from-pink-500 to-rose-400 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
+                  >
+                    확인!
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
